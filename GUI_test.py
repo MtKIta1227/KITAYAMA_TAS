@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QFileDialog, QSizePolicy
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QFileDialog, QSizePolicy, QToolBar
 import json
 
 class DataGraphApp(QMainWindow):
@@ -11,38 +11,55 @@ class DataGraphApp(QMainWindow):
 
         # メインウィジェットとレイアウト
         main_widget = QWidget()
-        main_layout = QVBoxLayout()
+        main_layout = QHBoxLayout()  # 横に並べるレイアウト
         main_widget.setLayout(main_layout)
 
-        # 各テキストボックスとラベルを作成
-        self.text_boxes = {}
-        for label in ['DARK_ref', 'DARK_sig', 'ref', 'sig', 'ref_p', 'sig_p']:
-            h_layout = QHBoxLayout()
-            lbl = QLabel(f'データ {label}:')
-            h_layout.addWidget(lbl)
-            text_box = QPlainTextEdit()
-            text_box.setFixedSize(150, 80)  # テキストボックスのサイズを設定
-            text_box.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-            h_layout.addWidget(text_box)
-            main_layout.addLayout(h_layout)
-            self.text_boxes[label] = text_box
+        # ツールバーの設定
+        self.toolbar = QToolBar("ツールバー")
+        self.addToolBar(self.toolbar)
 
-        # プロットボタン
+        # ツールバーにボタンを追加
         plot_button = QPushButton("グラフを描く")
         plot_button.clicked.connect(self.plot_graph)
-        main_layout.addWidget(plot_button)
+        self.toolbar.addWidget(plot_button)
 
-        # 保存ボタン
         save_button = QPushButton("データを保存")
         save_button.clicked.connect(self.save_data)
-        main_layout.addWidget(save_button)
+        self.toolbar.addWidget(save_button)
 
-        # 読み込みボタン
         load_button = QPushButton("データを読み込む")
         load_button.clicked.connect(self.load_data)
-        main_layout.addWidget(load_button)
+        self.toolbar.addWidget(load_button)
+
+        # 左側のレイアウト (ダークデータ)
+        dark_layout = QVBoxLayout()
+        self.text_boxes = {}
+        self.text_boxes['DARK_ref'] = self.create_text_box('DARK_ref', dark_layout)
+        self.text_boxes['DARK_sig'] = self.create_text_box('DARK_sig', dark_layout)
+
+        # 右側のレイアウト (残りのデータ)
+        remaining_layout = QVBoxLayout()
+        self.text_boxes['ref'] = self.create_text_box('ref', remaining_layout)
+        self.text_boxes['sig'] = self.create_text_box('sig', remaining_layout)
+        self.text_boxes['ref_p'] = self.create_text_box('ref_p', remaining_layout)
+        self.text_boxes['sig_p'] = self.create_text_box('sig_p', remaining_layout)
+
+        # 左側と右側のレイアウトをメインレイアウトに追加
+        main_layout.addLayout(dark_layout, 1)  # 左側を柔軟に
+        main_layout.addLayout(remaining_layout, 1)  # 右側を柔軟に
 
         self.setCentralWidget(main_widget)
+
+    def create_text_box(self, label, layout):
+        h_layout = QHBoxLayout()
+        lbl = QLabel(f'データ {label}:')
+        h_layout.addWidget(lbl)
+        text_box = QPlainTextEdit()
+        text_box.setFixedSize(150, 80)  # テキストボックスのサイズを設定
+        text_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)  # 柔軟にサイズを調整
+        h_layout.addWidget(text_box)
+        layout.addLayout(h_layout)
+        return text_box
 
     def parse_data(self, data):
         x_values, y_values = [], []
@@ -80,36 +97,45 @@ class DataGraphApp(QMainWindow):
             else:
                 log_values.append(np.nan)  # ゼロ除算が発生した場合はNaNを追加
 
-        # グラフの描画
-        fig, axs = plt.subplots(3, 1, figsize=(10, 15))
+        # LOG計算結果グラフを別ウィンドウで表示
+        log_fig = plt.figure(figsize=(6, 4))  # 小さめのウィンドウサイズ
+        plt.plot(x_dark_ref, log_values, color='black', linestyle='-',
+                 label='LOG((ref_p - DARK_ref) * (sig - DARK_sig) / (sig_p - DARK_sig) / (ref - DARK_ref))')
+        plt.axhline(0.01, color='red', linestyle='--')  # y=0.01の赤い横線
+        plt.axhline(-0.01, color='red', linestyle='--')  # y=-0.01の赤い横線
+        plt.title('LOG計算結果グラフ')
+        plt.xlabel('DARK_ref 1列目 (X軸)')
+        plt.ylabel('LOG値')
+        plt.legend()
+        plt.grid()
+        plt.get_current_fig_manager().window.setGeometry(100, 100, 600, 400)  # ウィンドウの位置とサイズを設定
+        plt.show()
 
-        # ref と ref_p のグラフ
-        axs[0].plot(x_dark_ref, results['ref - DARK_ref'], color='black', linestyle='-', label='ref - DARK_ref')
-        axs[0].plot(x_dark_ref, results['ref_p - DARK_ref'], color='gray', linestyle='--', label='ref_p - DARK_ref')
-        axs[0].set_title('ref と ref_p の計算結果グラフ')
-        axs[0].set_xlabel('DARK_ref 1列目 (X軸)')
-        axs[0].set_ylabel('値の差')
-        axs[0].legend()
-        axs[0].grid()
+        # ref と ref_p のグラフと sig と sig_p のグラフを同じウィンドウで表示
+        combined_fig = plt.figure(figsize=(6, 8))  # 縦長のウィンドウサイズ
 
-        # sig と sig_p のグラフ
-        axs[1].plot(x_dark_ref, results['sig - DARK_sig'], color='black', linestyle='-', label='sig - DARK_sig')
-        axs[1].plot(x_dark_ref, results['sig_p - DARK_sig'], color='gray', linestyle='--', label='sig_p - DARK_sig')
-        axs[1].set_title('sig と sig_p の計算結果グラフ')
-        axs[1].set_xlabel('DARK_ref 1列目 (X軸)')
-        axs[1].set_ylabel('値の差')
-        axs[1].legend()
-        axs[1].grid()
+        # 上部 (ref と ref_p のグラフ)
+        plt.subplot(2, 1, 1)
+        plt.plot(x_dark_ref, results['ref - DARK_ref'], color='black', linestyle='-', label='ref - DARK_ref')
+        plt.plot(x_dark_ref, results['ref_p - DARK_ref'], color='gray', linestyle='--', label='ref_p - DARK_ref')
+        plt.title('ref と ref_p の計算結果グラフ')
+        plt.xlabel('DARK_ref 1列目 (X軸)')
+        plt.ylabel('値の差')
+        plt.legend()
+        plt.grid()
 
-        # LOG計算結果グラフ
-        axs[2].plot(x_dark_ref, log_values, color='black', linestyle='-', marker='x', label='LOG((ref_p - DARK_ref) * (sig - DARK_sig) / (sig_p - DARK_sig) / (ref - DARK_ref))')
-        axs[2].set_title('LOG計算結果グラフ')
-        axs[2].set_xlabel('DARK_ref 1列目 (X軸)')
-        axs[2].set_ylabel('LOG値')
-        axs[2].legend()
-        axs[2].grid()
+        # 下部 (sig と sig_p のグラフ)
+        plt.subplot(2, 1, 2)
+        plt.plot(x_dark_ref, results['sig - DARK_sig'], color='black', linestyle='-', label='sig - DARK_sig')
+        plt.plot(x_dark_ref, results['sig_p - DARK_sig'], color='gray', linestyle='--', label='sig_p - DARK_sig')
+        plt.title('sig と sig_p の計算結果グラフ')
+        plt.xlabel('DARK_ref 1列目 (X軸)')
+        plt.ylabel('値の差')
+        plt.legend()
+        plt.grid()
 
         plt.tight_layout()
+        plt.get_current_fig_manager().window.setGeometry(800, 100, 600, 800)  # ウィンドウの位置とサイズを設定
         plt.show()
 
     def save_data(self):
