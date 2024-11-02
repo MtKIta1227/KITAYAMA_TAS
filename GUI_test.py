@@ -23,20 +23,20 @@ class DataGraphApp(QMainWindow):
         self.addToolBar(self.toolbar)
 
         # ツールバーにボタンを追加
-        load_button = QPushButton("データを読み込む")
+        load_button = QPushButton("Load Data")
         load_button.clicked.connect(self.load_data)
         self.toolbar.addWidget(load_button)
         
-        plot_button = QPushButton("グラフを描く")
+        plot_button = QPushButton("Plot")
         plot_button.clicked.connect(self.plot_graph)
         self.toolbar.addWidget(plot_button)
 
-        save_button = QPushButton("データを保存")
+        save_button = QPushButton("Save")
         save_button.clicked.connect(self.save_data)
         self.toolbar.addWidget(save_button)
 
         # Excel保存ボタンの追加
-        save_excel_button = QPushButton("Excelデータを保存")
+        save_excel_button = QPushButton("Output Excel")
         save_excel_button.clicked.connect(self.save_data_to_excel)
         self.toolbar.addWidget(save_excel_button)
 
@@ -201,7 +201,6 @@ class DataGraphApp(QMainWindow):
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Difference')
         plt.grid()
-
         plt.tight_layout()
         plt.get_current_fig_manager().window.setGeometry(900, 100, 400, 800)
         plt.show()
