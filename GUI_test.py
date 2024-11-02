@@ -2,7 +2,9 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QFileDialog, QSizePolicy, QToolBar
+from PyQt5.QtGui import QPixmap
 import json
+import os
 
 class DataGraphApp(QMainWindow):
     def __init__(self):
@@ -11,7 +13,7 @@ class DataGraphApp(QMainWindow):
 
         # メインウィジェットとレイアウト
         main_widget = QWidget()
-        main_layout = QHBoxLayout()  # 横に並べるレイアウト
+        main_layout = QVBoxLayout()
         main_widget.setLayout(main_layout)
 
         # ツールバーの設定
@@ -34,40 +36,73 @@ class DataGraphApp(QMainWindow):
         # 左側のレイアウト (ダークデータ)
         dark_layout = QVBoxLayout()
         self.text_boxes = {}
-        self.text_boxes['DARK_ref'] = self.create_text_box('DARK_ref', dark_layout)
-        self.text_boxes['DARK_sig'] = self.create_text_box('DARK_sig', dark_layout)
+        self.graph_widgets = {}
+        self.text_boxes['DARK_ref'], self.graph_widgets['DARK_ref'] = self.create_text_box_with_graph('DARK_ref', dark_layout)
+        self.text_boxes['DARK_sig'], self.graph_widgets['DARK_sig'] = self.create_text_box_with_graph('DARK_sig', dark_layout)
 
         # 右側のレイアウト (残りのデータ)
         remaining_layout = QVBoxLayout()
-        self.text_boxes['ref'] = self.create_text_box('ref', remaining_layout)
-        self.text_boxes['sig'] = self.create_text_box('sig', remaining_layout)
-        self.text_boxes['ref_p'] = self.create_text_box('ref_p', remaining_layout)
-        self.text_boxes['sig_p'] = self.create_text_box('sig_p', remaining_layout)
+        self.text_boxes['ref'], self.graph_widgets['ref'] = self.create_text_box_with_graph('ref', remaining_layout)
+        self.text_boxes['sig'], self.graph_widgets['sig'] = self.create_text_box_with_graph('sig', remaining_layout)
+        self.text_boxes['ref_p'], self.graph_widgets['ref_p'] = self.create_text_box_with_graph('ref_p', remaining_layout)
+        self.text_boxes['sig_p'], self.graph_widgets['sig_p'] = self.create_text_box_with_graph('sig_p', remaining_layout)
 
         # 左側と右側のレイアウトをメインレイアウトに追加
-        main_layout.addLayout(dark_layout, 1)  # 左側を柔軟に
-        main_layout.addLayout(remaining_layout, 1)  # 右側を柔軟に
+        main_layout.addLayout(dark_layout)
+        main_layout.addLayout(remaining_layout)
 
         self.setCentralWidget(main_widget)
 
-    def create_text_box(self, label, layout):
+        # テキストボックスの内容が変更されたときにプレビューを更新する
+        for text_box in self.text_boxes.values():
+            text_box.textChanged.connect(self.update_graphs)
+
+    def create_text_box_with_graph(self, label, layout):
         h_layout = QHBoxLayout()
         lbl = QLabel(f'データ {label}:')
         h_layout.addWidget(lbl)
+        
         text_box = QPlainTextEdit()
-        text_box.setFixedSize(150, 80)  # テキストボックスのサイズを設定
-        text_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)  # 柔軟にサイズを調整
+        text_box.setFixedSize(150, 80)
+        text_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         h_layout.addWidget(text_box)
+
+        graph_widget = QLabel()
+        graph_widget.setFixedSize(100, 80)
+        h_layout.addWidget(graph_widget)
+
         layout.addLayout(h_layout)
-        return text_box
+        return text_box, graph_widget
+
+    def update_graphs(self):
+        for label, text_box in self.text_boxes.items():
+            data = text_box.toPlainText()
+            self.update_graph(self.graph_widgets[label], data)
+
+    def update_graph(self, graph_widget, data):
+        plt.clf()
+        if data.strip():
+            x_values, y_values = self.parse_data(data)
+            plt.figure(figsize=(1.5, 1))
+            plt.plot(x_values, y_values, color='blue')
+            plt.axis('off')
+            plt.xlim(min(x_values), max(x_values) if x_values else 1)
+            plt.ylim(min(y_values), max(y_values) if y_values else 1)
+
+            temp_file_path = 'temp.png'
+            plt.savefig(temp_file_path, bbox_inches='tight', pad_inches=0)
+            plt.close()
+
+            graph_widget.setPixmap(QPixmap(temp_file_path))
+            os.remove(temp_file_path)
 
     def parse_data(self, data):
         x_values, y_values = [], []
         for line in data.splitlines():
             if line.strip():
                 parts = line.split()
-                x_values.append(float(parts[0]))  # 1列目の値を取得
-                y_values.append(float(parts[1]))  # 2列目の値を取得
+                x_values.append(float(parts[0]))
+                y_values.append(float(parts[1]))
         return x_values, y_values
 
     def plot_graph(self):
@@ -87,34 +122,34 @@ class DataGraphApp(QMainWindow):
             'sig_p - DARK_sig': [sig_p - dark_sig for dark_sig, sig_p in zip(y_dark_sig, y_sig_p)],
         }
 
-        # 新しい計算式 LOG((ref_p - DARK_ref) * (sig - DARK_sig) / (sig_p - DARK_sig) / (ref - DARK_ref))
+        # LOG計算
         log_values = []
         for ref_p_dark, sig_dark, sig_p_dark, ref_dark in zip(
                 results['ref_p - DARK_ref'], results['sig - DARK_sig'], results['sig_p - DARK_sig'], results['ref - DARK_ref']):
-            if ref_dark != 0 and sig_p_dark != 0:  # ゼロ除算を避ける
+            if ref_dark != 0 and sig_p_dark != 0:
                 log_value = np.log((ref_p_dark * sig_dark) / (sig_p_dark * ref_dark))
                 log_values.append(log_value)
             else:
-                log_values.append(np.nan)  # ゼロ除算が発生した場合はNaNを追加
+                log_values.append(np.nan)
 
         # LOG計算結果グラフを別ウィンドウで表示
-        log_fig = plt.figure(figsize=(6, 4))  # 小さめのウィンドウサイズ
+        log_fig = plt.figure(figsize=(6, 4))
         plt.plot(x_dark_ref, log_values, color='black', linestyle='-',
                  label='LOG((ref_p - DARK_ref) * (sig - DARK_sig) / (sig_p - DARK_sig) / (ref - DARK_ref))')
-        plt.axhline(0.01, color='red', linestyle='--')  # y=0.01の赤い横線
-        plt.axhline(-0.01, color='red', linestyle='--')  # y=-0.01の赤い横線
+        plt.axhline(0.01, color='red', linestyle='--')
+        plt.axhline(-0.01, color='red', linestyle='--')
         plt.title('LOG計算結果グラフ')
         plt.xlabel('DARK_ref 1列目 (X軸)')
         plt.ylabel('LOG値')
         plt.legend()
         plt.grid()
-        plt.get_current_fig_manager().window.setGeometry(100, 100, 600, 400)  # ウィンドウの位置とサイズを設定
+        plt.get_current_fig_manager().window.setGeometry(100, 100, 600, 400)
         plt.show()
 
-        # ref と ref_p のグラフと sig と sig_p のグラフを同じウィンドウで表示
-        combined_fig = plt.figure(figsize=(6, 8))  # 縦長のウィンドウサイズ
+        # ref と DARK_ref、sig と DARK_sig のグラフを同じウィンドウで表示
+        combined_fig = plt.figure(figsize=(6, 8))
 
-        # 上部 (ref と ref_p のグラフ)
+        # 上部 (ref と DARK_ref および ref_p と DARK_ref のグラフ)
         plt.subplot(2, 1, 1)
         plt.plot(x_dark_ref, results['ref - DARK_ref'], color='black', linestyle='-', label='ref - DARK_ref')
         plt.plot(x_dark_ref, results['ref_p - DARK_ref'], color='gray', linestyle='--', label='ref_p - DARK_ref')
@@ -124,7 +159,7 @@ class DataGraphApp(QMainWindow):
         plt.legend()
         plt.grid()
 
-        # 下部 (sig と sig_p のグラフ)
+        # 下部 (sig と DARK_sig および sig_p と DARK_sig のグラフ)
         plt.subplot(2, 1, 2)
         plt.plot(x_dark_ref, results['sig - DARK_sig'], color='black', linestyle='-', label='sig - DARK_sig')
         plt.plot(x_dark_ref, results['sig_p - DARK_sig'], color='gray', linestyle='--', label='sig_p - DARK_sig')
@@ -135,11 +170,10 @@ class DataGraphApp(QMainWindow):
         plt.grid()
 
         plt.tight_layout()
-        plt.get_current_fig_manager().window.setGeometry(800, 100, 600, 800)  # ウィンドウの位置とサイズを設定
+        plt.get_current_fig_manager().window.setGeometry(800, 100, 600, 800)
         plt.show()
 
     def save_data(self):
-        # 保存用の辞書を作成
         data = {label: self.text_boxes[label].toPlainText() for label in self.text_boxes}
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getSaveFileName(self, "データを保存", "", "JSON Files (*.json);;All Files (*)", options=options)
