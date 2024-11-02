@@ -59,7 +59,7 @@ class DataGraphApp(QMainWindow):
 
     def create_text_box_with_graph(self, label, layout):
         h_layout = QHBoxLayout()
-        lbl = QLabel(f'データ {label}:')
+        lbl = QLabel(f'{label}:')
         h_layout.addWidget(lbl)
         
         text_box = QPlainTextEdit()
@@ -84,7 +84,8 @@ class DataGraphApp(QMainWindow):
         if data.strip():
             x_values, y_values = self.parse_data(data)
             plt.figure(figsize=(1.5, 1))
-            plt.plot(x_values, y_values, color='blue')
+            plt.plot(x_values, y_values, color='blue', alpha=0.7, linestyle='-', linewidth=1)
+            plt.grid(graph_widget)
             plt.axis('off')
             plt.xlim(min(x_values), max(x_values) if x_values else 1)
             plt.ylim(min(y_values), max(y_values) if y_values else 1)
@@ -122,6 +123,19 @@ class DataGraphApp(QMainWindow):
             'sig_p - DARK_sig': [sig_p - dark_sig for dark_sig, sig_p in zip(y_dark_sig, y_sig_p)],
         }
 
+        # 新しい計算式の結果を計算
+        calculation_result = [
+            sig_p_dark - dark_sig - (sig_dark - dark_sig) - (ref_p_dark - dark_ref - (ref_dark - dark_ref))
+            for sig_p_dark, dark_sig, sig_dark, ref_p_dark, dark_ref, ref_dark in zip(
+                y_sig_p, y_dark_sig, y_sig, y_ref_p, y_dark_ref, y_ref)
+        ]
+        
+        # 2乗を計算
+        squared_result = [result ** 2 for result in calculation_result]
+
+        # 平方根を計算
+        sqrt_result = [np.sqrt(result) for result in squared_result]
+
         # LOG計算
         log_values = []
         for ref_p_dark, sig_dark, sig_p_dark, ref_dark in zip(
@@ -134,43 +148,55 @@ class DataGraphApp(QMainWindow):
 
         # LOG計算結果グラフを別ウィンドウで表示
         log_fig = plt.figure(figsize=(6, 4))
-        plt.plot(x_dark_ref, log_values, color='black', linestyle='-',
+        plt.plot(x_dark_ref, log_values, color='black', alpha=0.7, linestyle='-',
                  label='LOG((ref_p - DARK_ref) * (sig - DARK_sig) / (sig_p - DARK_sig) / (ref - DARK_ref))')
-        plt.axhline(0.01, color='red', linestyle='--')
-        plt.axhline(-0.01, color='red', linestyle='--')
-        plt.title('LOG計算結果グラフ')
-        plt.xlabel('DARK_ref 1列目 (X軸)')
-        plt.ylabel('LOG値')
-        plt.legend()
+        plt.axhline(0.01, color='red', alpha=0.8, linestyle='--')
+        plt.axhline(-0.01, color='red', alpha=0.8, linestyle='--')
+        plt.title('Transient Absorption Spectrum')
+        plt.xlabel('Wavelength / nm')
+        plt.ylabel('ΔAbs')
         plt.grid()
-        plt.get_current_fig_manager().window.setGeometry(100, 100, 600, 400)
+        plt.get_current_fig_manager().window.setGeometry(100, 100, 800, 400)
+        plt.tight_layout()
         plt.show()
 
+
         # ref と DARK_ref、sig と DARK_sig のグラフを同じウィンドウで表示
-        combined_fig = plt.figure(figsize=(6, 8))
+        combined_fig = plt.figure(figsize=(6, 10))  # 高さを調整
 
         # 上部 (ref と DARK_ref および ref_p と DARK_ref のグラフ)
-        plt.subplot(2, 1, 1)
-        plt.plot(x_dark_ref, results['ref - DARK_ref'], color='black', linestyle='-', label='ref - DARK_ref')
-        plt.plot(x_dark_ref, results['ref_p - DARK_ref'], color='gray', linestyle='--', label='ref_p - DARK_ref')
-        plt.title('ref と ref_p の計算結果グラフ')
-        plt.xlabel('DARK_ref 1列目 (X軸)')
-        plt.ylabel('値の差')
+        plt.subplot(3, 1, 1)  # 3行1列の配置の1つ目
+        plt.plot(x_dark_ref, results['ref - DARK_ref'], color='black', alpha=0.7, linestyle='-', label='ref - DARK_ref')
+        plt.plot(x_dark_ref, results['ref_p - DARK_ref'], color='black', alpha=0.7, linestyle='--', label='ref_p - DARK_ref')
+        #plt.title('ref and ref_p')
+        plt.xlabel('Wavelength / nm')
+        plt.ylabel('Counts')
         plt.legend()
+        plt.tight_layout()
         plt.grid()
 
-        # 下部 (sig と DARK_sig および sig_p と DARK_sig のグラフ)
-        plt.subplot(2, 1, 2)
-        plt.plot(x_dark_ref, results['sig - DARK_sig'], color='black', linestyle='-', label='sig - DARK_sig')
-        plt.plot(x_dark_ref, results['sig_p - DARK_sig'], color='gray', linestyle='--', label='sig_p - DARK_sig')
-        plt.title('sig と sig_p の計算結果グラフ')
-        plt.xlabel('DARK_ref 1列目 (X軸)')
-        plt.ylabel('値の差')
+        # 中部 (sig と DARK_sig および sig_p と DARK_sig のグラフ)
+        plt.subplot(3, 1, 2)  # 3行1列の配置の2つ目
+        plt.plot(x_dark_ref, results['sig - DARK_sig'], color='black', alpha=0.7, linestyle='-', label='sig - DARK_sig')
+        plt.plot(x_dark_ref, results['sig_p - DARK_sig'], color='black', alpha=0.7, linestyle='--', label='sig_p - DARK_sig')
+        #plt.title('sig and sig_p')
+        plt.xlabel('Wavelength / nm')
+        plt.ylabel('Counts')
         plt.legend()
+        plt.tight_layout()
+        plt.grid()
+
+        # 下部 (新しい計算式の平方根の結果グラフ)
+        plt.subplot(3, 1, 3)  # 3行1列の配置の3つ目
+        plt.plot(x_dark_ref, sqrt_result, color='k', alpha=0.7, linestyle='-', label='新しい計算式の平方根')
+        #plt.title(' √(sig_p - DARK_sig - (sig - DARK_sig) - (ref_p - DARK_ref - (ref - DARK_ref)))^2')
+        plt.xlabel('Wavelength / nm')
+        plt.ylabel('Difference')
+        #plt.legend()
         plt.grid()
 
         plt.tight_layout()
-        plt.get_current_fig_manager().window.setGeometry(800, 100, 600, 800)
+        plt.get_current_fig_manager().window.setGeometry(900, 100, 400, 800)
         plt.show()
 
     def save_data(self):
