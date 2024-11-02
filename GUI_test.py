@@ -201,8 +201,8 @@ class DataGraphApp(QMainWindow):
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Difference')
         plt.grid()
-        plt.tight_layout()
         plt.get_current_fig_manager().window.setGeometry(900, 100, 400, 800)
+        plt.tight_layout()
         plt.show()
 
     def save_data(self):
