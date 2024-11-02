@@ -5,11 +5,13 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHB
 from PyQt5.QtGui import QPixmap
 import json
 import os
+import pandas as pd  # pandasのインポートを追加
 
 class DataGraphApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("データグラフ作成")
+        self.resize(400, 600)
 
         # メインウィジェットとレイアウト
         main_widget = QWidget()
@@ -21,6 +23,10 @@ class DataGraphApp(QMainWindow):
         self.addToolBar(self.toolbar)
 
         # ツールバーにボタンを追加
+        load_button = QPushButton("データを読み込む")
+        load_button.clicked.connect(self.load_data)
+        self.toolbar.addWidget(load_button)
+        
         plot_button = QPushButton("グラフを描く")
         plot_button.clicked.connect(self.plot_graph)
         self.toolbar.addWidget(plot_button)
@@ -29,9 +35,10 @@ class DataGraphApp(QMainWindow):
         save_button.clicked.connect(self.save_data)
         self.toolbar.addWidget(save_button)
 
-        load_button = QPushButton("データを読み込む")
-        load_button.clicked.connect(self.load_data)
-        self.toolbar.addWidget(load_button)
+        # Excel保存ボタンの追加
+        save_excel_button = QPushButton("Excelデータを保存")
+        save_excel_button.clicked.connect(self.save_data_to_excel)
+        self.toolbar.addWidget(save_excel_button)
 
         # 左側のレイアウト (ダークデータ)
         dark_layout = QVBoxLayout()
@@ -59,7 +66,10 @@ class DataGraphApp(QMainWindow):
 
     def create_text_box_with_graph(self, label, layout):
         h_layout = QHBoxLayout()
+        
         lbl = QLabel(f'{label}:')
+        lbl.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)  # 固定サイズに設定
+        lbl.setFixedWidth(70)  # 幅を50に固定（必要に応じて調整）
         h_layout.addWidget(lbl)
         
         text_box = QPlainTextEdit()
@@ -68,7 +78,7 @@ class DataGraphApp(QMainWindow):
         h_layout.addWidget(text_box)
 
         graph_widget = QLabel()
-        graph_widget.setFixedSize(100, 80)
+        graph_widget.setFixedSize(100, 100)
         h_layout.addWidget(graph_widget)
 
         layout.addLayout(h_layout)
@@ -150,8 +160,10 @@ class DataGraphApp(QMainWindow):
         log_fig = plt.figure(figsize=(6, 4))
         plt.plot(x_dark_ref, log_values, color='black', alpha=0.7, linestyle='-',
                  label='LOG((ref_p - DARK_ref) * (sig - DARK_sig) / (sig_p - DARK_sig) / (ref - DARK_ref))')
-        plt.axhline(0.01, color='red', alpha=0.8, linestyle='--')
-        plt.axhline(-0.01, color='red', alpha=0.8, linestyle='--')
+        #y軸の-0.01から0.01の範囲を緑色でハイライト
+        plt.axhspan(-0.01, 0.01, color='green', alpha=0.2)
+        #plt.axhline(0.01, color='red', alpha=0.8, linestyle='--')
+        #plt.axhline(-0.01, color='red', alpha=0.8, linestyle='--')
         plt.title('Transient Absorption Spectrum')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('ΔAbs')
@@ -160,7 +172,6 @@ class DataGraphApp(QMainWindow):
         plt.tight_layout()
         plt.show()
 
-
         # ref と DARK_ref、sig と DARK_sig のグラフを同じウィンドウで表示
         combined_fig = plt.figure(figsize=(6, 10))  # 高さを調整
 
@@ -168,7 +179,6 @@ class DataGraphApp(QMainWindow):
         plt.subplot(3, 1, 1)  # 3行1列の配置の1つ目
         plt.plot(x_dark_ref, results['ref - DARK_ref'], color='black', alpha=0.7, linestyle='-', label='ref - DARK_ref')
         plt.plot(x_dark_ref, results['ref_p - DARK_ref'], color='black', alpha=0.7, linestyle='--', label='ref_p - DARK_ref')
-        #plt.title('ref and ref_p')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Counts')
         plt.legend()
@@ -179,7 +189,6 @@ class DataGraphApp(QMainWindow):
         plt.subplot(3, 1, 2)  # 3行1列の配置の2つ目
         plt.plot(x_dark_ref, results['sig - DARK_sig'], color='black', alpha=0.7, linestyle='-', label='sig - DARK_sig')
         plt.plot(x_dark_ref, results['sig_p - DARK_sig'], color='black', alpha=0.7, linestyle='--', label='sig_p - DARK_sig')
-        #plt.title('sig and sig_p')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Counts')
         plt.legend()
@@ -189,10 +198,8 @@ class DataGraphApp(QMainWindow):
         # 下部 (新しい計算式の平方根の結果グラフ)
         plt.subplot(3, 1, 3)  # 3行1列の配置の3つ目
         plt.plot(x_dark_ref, sqrt_result, color='k', alpha=0.7, linestyle='-', label='新しい計算式の平方根')
-        #plt.title(' √(sig_p - DARK_sig - (sig - DARK_sig) - (ref_p - DARK_ref - (ref - DARK_ref)))^2')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Difference')
-        #plt.legend()
         plt.grid()
 
         plt.tight_layout()
@@ -208,6 +215,44 @@ class DataGraphApp(QMainWindow):
             with open(file_path, 'w') as f:
                 json.dump(data, f)
             print("データが保存されました:", file_path)
+
+    def save_data_to_excel(self):
+        data = {label: self.text_boxes[label].toPlainText() for label in self.text_boxes}
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(self, "Excelデータを保存", "", "Excel Files (*.xlsx);;All Files (*)", options=options)
+
+        if file_path:
+            # データをDataFrameに変換し、グラフデータも含める
+            df = pd.DataFrame(dict([(k, pd.Series(v.splitlines())) for k, v in data.items()]))
+
+            # グラフデータを追加
+            x_dark_ref, y_dark_ref = self.parse_data(self.text_boxes['DARK_ref'].toPlainText())
+            _, y_dark_sig = self.parse_data(self.text_boxes['DARK_sig'].toPlainText())
+            _, y_ref = self.parse_data(self.text_boxes['ref'].toPlainText())
+            _, y_sig = self.parse_data(self.text_boxes['sig'].toPlainText())
+            _, y_ref_p = self.parse_data(self.text_boxes['ref_p'].toPlainText())
+            _, y_sig_p = self.parse_data(self.text_boxes['sig_p'].toPlainText())
+
+            # 各グラフデータをDataFrameに追加
+            df_graph = pd.DataFrame({
+                'Wavelength': x_dark_ref,
+                'DARK_ref': y_dark_ref,
+                'DARK_sig': y_dark_sig,
+                'ref': y_ref,
+                'sig': y_sig,
+                'ref_p': y_ref_p,
+                'sig_p': y_sig_p
+            })
+
+            # ΔAbsの計算を追加
+            delta_abs = [sig - dark_sig for sig, dark_sig in zip(y_sig, y_dark_sig)]
+            df_graph['ΔAbs'] = delta_abs
+
+            # データをExcelに保存
+            with pd.ExcelWriter(file_path) as writer:
+                df_graph.to_excel(writer, sheet_name='Graph Data', index=False)
+
+            print("データがExcelファイルとして保存されました:", file_path)
 
     def load_data(self):
         options = QFileDialog.Options()
