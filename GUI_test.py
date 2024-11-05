@@ -149,9 +149,9 @@ class DataGraphApp(QMainWindow):
         sqrt_result = [np.sqrt(result) for result in squared_result]
 
         #最大値で正規化
-        max_value = max(sqrt_result)
+        max_value = max(calculation_result)
         sqrt_result = [result / max_value for result in sqrt_result]
-        
+
 
         # LOG計算
         log_values = []
