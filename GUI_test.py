@@ -89,6 +89,7 @@ class DataGraphApp(QMainWindow):
             data = text_box.toPlainText()
             self.update_graph(self.graph_widgets[label], data)
 
+    # グラフを更新する関数
     def update_graph(self, graph_widget, data):
         plt.clf()
         if data.strip():
@@ -107,6 +108,7 @@ class DataGraphApp(QMainWindow):
             graph_widget.setPixmap(QPixmap(temp_file_path))
             os.remove(temp_file_path)
 
+    # テキストボックスのデータを解析する関数
     def parse_data(self, data):
         x_values, y_values = [], []
         for line in data.splitlines():
@@ -133,7 +135,7 @@ class DataGraphApp(QMainWindow):
             'sig_p - DARK_sig': [sig_p - dark_sig for dark_sig, sig_p in zip(y_dark_sig, y_sig_p)],
         }
 
-        # 新しい計算式の結果を計算
+        #差分を計算
         calculation_result = [
             sig_p_dark - dark_sig - (sig_dark - dark_sig) - (ref_p_dark - dark_ref - (ref_dark - dark_ref))
             for sig_p_dark, dark_sig, sig_dark, ref_p_dark, dark_ref, ref_dark in zip(
@@ -145,6 +147,11 @@ class DataGraphApp(QMainWindow):
 
         # 平方根を計算
         sqrt_result = [np.sqrt(result) for result in squared_result]
+
+        #最大値で正規化
+        max_value = max(sqrt_result)
+        sqrt_result = [result / max_value for result in sqrt_result]
+        
 
         # LOG計算
         log_values = []
