@@ -136,29 +136,55 @@ class DataGraphApp(QMainWindow):
         }
 
         #差分を計算
-        calculation_result = [
-            sig_p_dark - dark_sig - (sig_dark - dark_sig) - (ref_p_dark - dark_ref - (ref_dark - dark_ref))
-            for sig_p_dark, dark_sig, sig_dark, ref_p_dark, dark_ref, ref_dark in zip(
+        calc_deffer = [
+            sig_p_raw - dark_sig - (sig_dark_raw - dark_sig) - (ref_p_raw - dark_ref - (ref_dark_raw - dark_ref))
+            for sig_p_raw, dark_sig, sig_dark_raw, ref_p_raw, dark_ref, ref_dark_raw in zip(
                 y_sig_p, y_dark_sig, y_sig, y_ref_p, y_dark_ref, y_ref)
         ]
-        
+
+        calc_deffer_sig = [
+            sig_p_raw - dark_sig - (sig_dark_raw - dark_sig)
+            for sig_p_raw, dark_sig, sig_dark_raw in zip(
+                y_sig_p, y_dark_sig, y_sig)
+        ]
+        #2乗を計算
+        squared_result = [result ** 2 for result in calc_deffer_sig]
+        #最大値で正規化
+        max_value = max(squared_result)
+        calc_deffer_sig = [result / max_value for result in squared_result]
+
+
+        calc_deffer_ref = [
+            ref_p_raw - dark_ref - (ref_dark_raw - dark_ref)
+            for ref_p_raw, dark_ref, ref_dark_raw in zip(
+                y_ref_p, y_dark_ref, y_ref)
+        ]
+        #2乗を計算
+        squared_result = [result ** 2 for result in calc_deffer_ref]
+        #最大値で正規化
+        max_value = max(squared_result)
+        calc_deffer_ref = [result / max_value for result in squared_result]
+
+
+        print(calc_deffer)
+
         # 2乗を計算
-        squared_result = [result ** 2 for result in calculation_result]
+        squared_result = [result ** 2 for result in calc_deffer]
 
         # 平方根を計算
         sqrt_result = [np.sqrt(result) for result in squared_result]
 
         #最大値で正規化
-        max_value = max(calculation_result)
+        max_value = max(calc_deffer)
         sqrt_result = [result / max_value for result in sqrt_result]
 
 
         # LOG計算
         log_values = []
-        for ref_p_dark, sig_dark, sig_p_dark, ref_dark in zip(
+        for ref_p_real, sig_real, sig_p_real, ref_real in zip(
                 results['ref_p - DARK_ref'], results['sig - DARK_sig'], results['sig_p - DARK_sig'], results['ref - DARK_ref']):
-            if ref_dark != 0 and sig_p_dark != 0:
-                log_value = np.log((ref_p_dark * sig_dark) / (sig_p_dark * ref_dark))
+            if ref_real != 0 and sig_p_real != 0:
+                log_value = np.log((ref_p_real * sig_real) / (sig_p_real * ref_real))
                 log_values.append(log_value)
             else:
                 log_values.append(np.nan)
@@ -205,6 +231,8 @@ class DataGraphApp(QMainWindow):
         # 下部 (新しい計算式の平方根の結果グラフ)
         plt.subplot(3, 1, 3)  # 3行1列の配置の3つ目
         plt.plot(x_dark_ref, sqrt_result, color='k', alpha=0.7, linestyle='-', label='新しい計算式の平方根')
+        plt.plot(x_dark_ref, calc_deffer_sig, color='r', alpha=0.7, linestyle='-', label='sig_p - DARK_sig - (sig - DARK_sig)')
+        plt.plot(x_dark_ref, calc_deffer_ref, color='b', alpha=0.7, linestyle='-', label='ref_p - DARK_ref - (ref - DARK_ref)')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Difference')
         plt.grid()
