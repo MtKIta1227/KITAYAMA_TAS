@@ -169,24 +169,28 @@ class DataGraphApp(QMainWindow):
         #絶対値を計算
         calc_deffer = [abs(result) for result in calc_deffer]
 
-        #規格化
+        #全体的に値が小さいか判断したいので、最大値で正規化
         max_value = max(calc_deffer)
         calc_deffer = [result / max_value for result in calc_deffer]
 
         # LOG計算 (ΔAbsの計算)
         log_values = []
         for ref_p_real, sig_real, sig_p_real, ref_real in zip(
-                results['ref_p - DARK_ref'], results['sig - DARK_sig'], results['sig_p - DARK_sig'], results['ref - DARK_ref']):
+                y_ref_p, y_sig, y_sig_p, y_ref):
+            # 0での除算を避けるための処理
             if ref_real != 0 and sig_p_real != 0:
                 log_value = np.log((ref_p_real * sig_real) / (sig_p_real * ref_real))
                 log_values.append(log_value)
             else:
+                # 0での除算の場合はnanを追加
                 log_values.append(np.nan)
+
+
 
         # LOG計算結果グラフを別ウィンドウで表示
         log_fig = plt.figure(figsize=(6, 4))
         plt.plot(x_dark_ref, log_values, color='black', alpha=0.7, linestyle='-',
-                 label='LOG((ref_p - DARK_ref) * (sig - DARK_sig) / (sig_p - DARK_sig) / (ref - DARK_ref))')
+                 label='LOG = log((ref_p * sig) / (sig_p * ref))')
         
         #y軸の-0.01から0.01の範囲を緑色でハイライト
         plt.axhspan(-0.01, 0.01, color='green', alpha=0.2)
@@ -195,6 +199,7 @@ class DataGraphApp(QMainWindow):
         plt.title('Transient Absorption Spectrum')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('ΔAbs')
+        plt.legend()
         plt.grid()
         plt.get_current_fig_manager().window.setGeometry(100, 100, 800, 400)
         plt.tight_layout()
@@ -225,9 +230,9 @@ class DataGraphApp(QMainWindow):
 
         # 下部
         plt.subplot(3, 1, 3)  # 3行1列の配置の3つ目
-        plt.plot(x_dark_ref, calc_deffer, color='k', alpha=0.6, linestyle='-', label='a-b')
-        plt.plot(x_dark_ref, calc_deffer_sig, color='r', alpha=0.6, linestyle='-', label='a = sig_p - DARK_sig - (sig - DARK_sig)')
-        plt.plot(x_dark_ref, calc_deffer_ref, color='b', alpha=0.6, linestyle='-', label='b = ref_p - DARK_ref - (ref - DARK_ref)')
+        plt.plot(x_dark_ref, calc_deffer, color='k', alpha=0.8, linestyle='-', label='a-b')
+        plt.plot(x_dark_ref, calc_deffer_sig, color='b', alpha=0.6, linestyle='-', label='a = sig_p - DARK_sig - (sig - DARK_sig)')
+        plt.plot(x_dark_ref, calc_deffer_ref, color='r', alpha=0.6, linestyle='-', label='b = ref_p - DARK_ref - (ref - DARK_ref)')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Difference')
         plt.legend()
