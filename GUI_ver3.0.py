@@ -338,7 +338,7 @@ class DataGraphApp(QMainWindow):
                             log_values.append(log_value)
                         else:
                             log_values.append(np.nan)
-                    df['LOG'] = log_values
+                    df['ΔAbs'] = log_values
                     # パルス名でシートを作成
                     df.to_excel(writer, sheet_name=pulse, index=False)
             
