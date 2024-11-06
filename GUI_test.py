@@ -240,9 +240,9 @@ class DataGraphApp(QMainWindow):
 
         # 下部 (新しい計算式の平方根の結果グラフ)
         plt.subplot(3, 1, 3)  # 3行1列の配置の3つ目
-        plt.plot(x_dark_ref, calc_deffer, color='k', alpha=0.7, linestyle='-', label='noise')
-        plt.plot(x_dark_ref, calc_deffer_sig, color='r', alpha=0.7, linestyle='-', label='sig_p - DARK_sig - (sig - DARK_sig)')
-        plt.plot(x_dark_ref, calc_deffer_ref, color='b', alpha=0.7, linestyle='-', label='ref_p - DARK_ref - (ref - DARK_ref)')
+        plt.plot(x_dark_ref, calc_deffer, color='k', alpha=0.6, linestyle='-', label='a-b')
+        plt.plot(x_dark_ref, calc_deffer_sig, color='r', alpha=0.6, linestyle='-', label='a = sig_p - DARK_sig - (sig - DARK_sig)')
+        plt.plot(x_dark_ref, calc_deffer_ref, color='b', alpha=0.6, linestyle='-', label='b = ref_p - DARK_ref - (ref - DARK_ref)')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Difference')
         plt.legend()
