@@ -1,0 +1,7 @@
+2024-11-06 17:12:11,330 - INFO - Start Log
+2024-11-06 17:12:11,331 - INFO - Connecting to SIGMA MARK-202...
+2024-11-06 17:12:12,333 - INFO - port:COM1, baudrate9600, timeout=3, parity=N, bytesize=8, stopbits=1, xonxoff=False, rtscts=False, dsrdtr=False
+2024-11-06 17:12:13,334 - INFO - Successful connection to SIGMA MARK-202.
+2024-11-06 17:12:13,334 - INFO - open: COM1
+2024-11-06 17:12:13,349 - INFO - S5000F5000R1000
+2024-11-06 17:12:14,349 - INFO - Connecting to SURUGA D220...
