@@ -1,0 +1,123 @@
+const int motorPin1 = 8;
+const int motorPin2 = 9;
+const int motorPin3 = 10;
+const int motorPin4 = 11;
+const int motorPin5 = 4; // 新しいモーターのピン
+const int motorPin6 = 5;
+const int motorPin7 = 6;
+const int motorPin8 = 7;
+
+int delayTime = 1; // デフォルトの遅延時間
+
+void setup() {
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
+  pinMode(motorPin3, OUTPUT);
+  pinMode(motorPin4, OUTPUT);
+  pinMode(motorPin5, OUTPUT); // 新しいモーターのピン設定
+  pinMode(motorPin6, OUTPUT);
+  pinMode(motorPin7, OUTPUT);
+  pinMode(motorPin8, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n');
+    processCommand(command);
+  }
+}
+
+void processCommand(String command) {
+  int steps = 0;
+  int direction = 1;
+  
+  int firstComma = command.indexOf(',');
+  int secondComma = command.indexOf(',', firstComma + 1);
+
+  if (firstComma > 0 && secondComma > 0) {
+    steps = command.substring(0, firstComma).toInt();
+    delayTime = command.substring(firstComma + 1, secondComma).toInt();
+    direction = command.substring(secondComma + 1).toInt();
+  }
+
+  stepMotor(steps, delayTime, direction);
+}
+
+void stepMotor(int steps, int delayTime, int direction) {
+  for (int i = 0; i < steps; i++) {
+    if (direction == 1) {
+      // 時計回りのステップシーケンス
+      digitalWrite(motorPin1, HIGH);
+      digitalWrite(motorPin2, LOW);
+      digitalWrite(motorPin3, LOW);
+      digitalWrite(motorPin4, LOW);
+      digitalWrite(motorPin5, LOW);
+      digitalWrite(motorPin6, LOW);
+      digitalWrite(motorPin7, LOW);
+      digitalWrite(motorPin8, LOW);
+      delay(delayTime);
+
+      digitalWrite(motorPin1, LOW);
+      digitalWrite(motorPin2, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin2, LOW);
+      digitalWrite(motorPin3, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin3, LOW);
+      digitalWrite(motorPin4, HIGH);
+      delay(delayTime);
+      
+      // 新しいモーターのステップ
+      digitalWrite(motorPin4, LOW);
+      digitalWrite(motorPin5, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin5, LOW);
+      digitalWrite(motorPin6, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin6, LOW);
+      digitalWrite(motorPin7, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin7, LOW);
+      digitalWrite(motorPin8, HIGH);
+      delay(delayTime);
+    } else {
+      // 反時計回りのステップシーケンス
+      digitalWrite(motorPin8, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin8, LOW);
+      digitalWrite(motorPin7, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin7, LOW);
+      digitalWrite(motorPin6, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin6, LOW);
+      digitalWrite(motorPin5, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin5, LOW);
+      digitalWrite(motorPin4, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin4, LOW);
+      digitalWrite(motorPin3, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin3, LOW);
+      digitalWrite(motorPin2, HIGH);
+      delay(delayTime);
+      
+      digitalWrite(motorPin2, LOW);
+      digitalWrite(motorPin1, HIGH);
+      delay(delayTime);
+    }
+  }
+}
