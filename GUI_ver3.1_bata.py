@@ -10,7 +10,7 @@ import pandas as pd
 class DataGraphApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Tas")
+        self.setWindowTitle("データグラフ作成")
         self.resize(400, 600)
 
         # パルスを保存する辞書
@@ -29,7 +29,11 @@ class DataGraphApp(QMainWindow):
         load_button = QPushButton("Load Data")
         load_button.clicked.connect(self.load_data)
         self.toolbar.addWidget(load_button)
-        
+
+        load_all_button = QPushButton("Load All Data")  # 新しいボタン
+        load_all_button.clicked.connect(self.load_all_data)  # 新しいメソッド
+        self.toolbar.addWidget(load_all_button)
+
         plot_button = QPushButton("Plot")
         plot_button.clicked.connect(self.plot_graph)
         self.toolbar.addWidget(plot_button)
@@ -37,6 +41,10 @@ class DataGraphApp(QMainWindow):
         save_button = QPushButton("Save")
         save_button.clicked.connect(self.save_data)
         self.toolbar.addWidget(save_button)
+
+        save_all_button = QPushButton("Save All Data")  # 新しいボタン
+        save_all_button.clicked.connect(self.save_all_data)  # 新しいメソッド
+        self.toolbar.addWidget(save_all_button)
 
         save_excel_button = QPushButton("Output Excel")
         save_excel_button.clicked.connect(self.save_data_to_excel)
@@ -46,8 +54,8 @@ class DataGraphApp(QMainWindow):
         pulse_layout = QHBoxLayout()
         self.pulse_input = QPlainTextEdit()
         self.pulse_input.setFixedSize(100, 30)
-        pulse_button = QPushButton("Submit")
-        pulse_button.clicked.connect(self.save_pulse_data)
+        pulse_button = QPushButton("Save Pulse Data")
+        pulse_button.clicked.connect(self.save_pulse_data)  # パルスデータ保存ボタン
 
         pulse_layout.addWidget(QLabel("Pulse:"))
         pulse_layout.addWidget(self.pulse_input)
@@ -56,7 +64,7 @@ class DataGraphApp(QMainWindow):
 
         # パルスリストの表示をQComboBoxに変更
         self.pulse_list = QComboBox()
-        self.pulse_list.currentIndexChanged.connect(self.load_selected_pulse_data)  # 変更
+        self.pulse_list.currentIndexChanged.connect(self.load_selected_pulse_data)
         main_layout.addWidget(QLabel("Saved Pulses:"))
         main_layout.addWidget(self.pulse_list)
 
@@ -85,7 +93,7 @@ class DataGraphApp(QMainWindow):
 
         self.setCentralWidget(main_widget)
 
-        # テキストボックスの内容が変更されたときにプレビューを更新する
+        # テキストボックスの内容が変更されたときにグラフを更新する
         for text_box in self.text_boxes.values():
             text_box.textChanged.connect(self.update_graphs)
 
@@ -120,7 +128,7 @@ class DataGraphApp(QMainWindow):
             x_values, y_values = self.parse_data(data)
             plt.figure(figsize=(1.5, 1))
             plt.plot(x_values, y_values, color='blue', alpha=0.7, linestyle='-', linewidth=1)
-            plt.grid(graph_widget)
+            plt.grid()
             plt.axis('off')
             plt.xlim(min(x_values), max(x_values) if x_values else 1)
             plt.ylim(min(y_values), max(y_values) if y_values else 1)
@@ -191,17 +199,15 @@ class DataGraphApp(QMainWindow):
 
         # LOG計算結果グラフを別ウィンドウで表示
         log_fig = plt.figure(figsize=(6, 4))
-
-
         plt.plot(x_dark_ref, log_values, color='black', alpha=0.7, linestyle='-',
-                 label='ΔAbs = log((ref_p * sig) / (sig_p * ref))')
+                 label='LOG = log((ref_p * sig) / (sig_p * ref))')
         plt.axhspan(-0.01, 0.01, color='green', alpha=0.2)
+        plt.title('Transient Absorption Spectrum')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('ΔAbs')
-        plt.title(f'Transient Absorption Spectrum (PULSE {self.pulse_input.toPlainText().strip()})')
         plt.legend()
         plt.grid()
-        plt.get_current_fig_manager().window.setGeometry(620, 100, 800, 400)
+        plt.get_current_fig_manager().window.setGeometry(100, 100, 800, 400)
         plt.tight_layout()
         plt.show()
 
@@ -214,7 +220,6 @@ class DataGraphApp(QMainWindow):
         plt.plot(x_dark_ref, results['ref_p - DARK_ref'], color='black', linestyle='--', label='ref_p - DARK_ref')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Counts')
-        plt.title(F'Pulse {self.pulse_input.toPlainText().strip()}')
         plt.legend()
         plt.tight_layout()
         plt.grid()
@@ -286,16 +291,14 @@ class DataGraphApp(QMainWindow):
                     log_values.append(log_value)
                 else:
                     log_values.append(np.nan)
-
             plt.plot(x_dark_ref, log_values, label=f'Pulse {pulse}')
-
-        plt.xlabel('Wavelength / nm')
-        plt.ylabel('ΔAbs')
-        plt.legend()
-        plt.title('Transient Absorption Spectrum with Overlaid Pulses')
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
+            plt.xlabel('Wavelength / nm')
+            plt.ylabel('ΔAbs')
+            plt.legend()
+            plt.title('Transient Absorption Spectrum with Overlaid Pulses')
+            plt.grid()
+            plt.tight_layout()
+            plt.show()
 
     def save_data(self):
         data = {label: self.text_boxes[label].toPlainText() for label in self.text_boxes}
@@ -306,6 +309,37 @@ class DataGraphApp(QMainWindow):
             with open(file_path, 'w') as f:
                 json.dump(data, f)
             print("データが保存されました:", file_path)
+
+    def save_all_data(self):
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(self, "All Dataを保存", "", "JSON Files (*.json);;All Files (*)", options=options)
+        
+        if file_path:
+            with open(file_path, 'w') as f:
+                json.dump(self.pulse_data, f)
+            print("すべてのパルスデータが保存されました:", file_path)
+
+    def load_data(self):
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getOpenFileName(self, "データを読み込む", "", "JSON Files (*.json);;All Files (*)", options=options)
+        
+        if file_path:
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            for label, content in data.items():
+                if label in self.text_boxes:
+                    self.text_boxes[label].setPlainText(content)
+            print("データが読み込まれました:", file_path)
+
+    def load_all_data(self):
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getOpenFileName(self, "すべてのデータを読み込む", "", "JSON Files (*.json);;All Files (*)", options=options)
+        
+        if file_path:
+            with open(file_path, 'r') as f:
+                self.pulse_data = json.load(f)
+            self.update_pulse_list()  # パルスリストを更新
+            print("すべてのパルスデータが読み込まれました:", file_path)
 
     def save_data_to_excel(self):
         # エクセルファイルの保存先を選択
@@ -322,7 +356,7 @@ class DataGraphApp(QMainWindow):
                     _, y_sig = self.parse_data(data['sig'])
                     _, y_ref_p = self.parse_data(data['ref_p'])
                     _, y_sig_p = self.parse_data(data['sig_p'])
-    
+
                     # DataFrameを作成
                     df = pd.DataFrame({
                         'Wavelength': x_dark_ref,
@@ -348,27 +382,6 @@ class DataGraphApp(QMainWindow):
             
             print("データがエクセルファイルに保存されました:", file_path)
 
-    def load_data(self):
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getOpenFileName(self, "データを読み込む", "", "JSON Files (*.json);;All Files (*)", options=options)
-        
-        if file_path:
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-            for label, content in data.items():
-                if label in self.text_boxes:
-                    self.text_boxes[label].setPlainText(content)
-            print("データが読み込まれました:", file_path)
-
-    def save_pulse_data(self):
-        pulse_value = self.pulse_input.toPlainText().strip()
-        if pulse_value:
-            # 各テキストボックスの内容を保存
-            data = {label: text_box.toPlainText() for label, text_box in self.text_boxes.items()}
-            self.pulse_data[pulse_value] = data
-            self.update_pulse_list()
-            print(f"Pulse {pulse_value}のデータが保存されました。")
-
     def load_selected_pulse_data(self):
         pulse_value = self.pulse_list.currentText()  # currentItem()からcurrentText()に変更
         if pulse_value:
@@ -378,6 +391,7 @@ class DataGraphApp(QMainWindow):
                     if label in self.text_boxes:
                         self.text_boxes[label].setPlainText(content)
                 print(f"Pulse {pulse_value}のデータが読み込まれました。")
+                self.setWindowTitle(f"データグラフ作成 - {pulse_value}")  # ウィンドウ名を更新
             else:
                 print(f"Pulse {pulse_value}のデータは見つかりません。")
 
@@ -385,6 +399,23 @@ class DataGraphApp(QMainWindow):
         self.pulse_list.clear()
         for pulse in self.pulse_data.keys():
             self.pulse_list.addItem(pulse)
+
+    def save_pulse_data(self):
+        pulse_value = self.pulse_input.toPlainText().strip()
+        if pulse_value:
+            # 既存のデータがあれば更新し、なければ新しく追加
+            self.pulse_data[pulse_value] = {
+                'DARK_ref': self.text_boxes['DARK_ref'].toPlainText(),
+                'DARK_sig': self.text_boxes['DARK_sig'].toPlainText(),
+                'ref': self.text_boxes['ref'].toPlainText(),
+                'sig': self.text_boxes['sig'].toPlainText(),
+                'ref_p': self.text_boxes['ref_p'].toPlainText(),
+                'sig_p': self.text_boxes['sig_p'].toPlainText()
+            }
+            self.update_pulse_list()  # パルスリストを更新
+            print(f"Pulse {pulse_value}が保存されました。")
+        else:
+            print("パルス名が空です。")
 
 # アプリケーションの起動
 if __name__ == "__main__":
