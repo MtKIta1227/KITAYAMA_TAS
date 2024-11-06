@@ -165,6 +165,16 @@ class DataGraphApp(QMainWindow):
         max_value = max(squared_result)
         calc_deffer_ref = [result / max_value for result in squared_result]
 
+        #calc_deffer_sigとcalc_deffer_refの差を計算
+        calc_deffer = [sig - ref for sig, ref in zip(calc_deffer_sig, calc_deffer_ref)]
+
+        #絶対値を計算
+        calc_deffer = [abs(result) for result in calc_deffer]
+        #規格化
+        max_value = max(calc_deffer)
+        calc_deffer = [result / max_value for result in calc_deffer]
+
+        
 
         print(calc_deffer)
 
@@ -230,11 +240,12 @@ class DataGraphApp(QMainWindow):
 
         # 下部 (新しい計算式の平方根の結果グラフ)
         plt.subplot(3, 1, 3)  # 3行1列の配置の3つ目
-        plt.plot(x_dark_ref, sqrt_result, color='k', alpha=0.7, linestyle='-', label='新しい計算式の平方根')
+        plt.plot(x_dark_ref, calc_deffer, color='k', alpha=0.7, linestyle='-', label='noise')
         plt.plot(x_dark_ref, calc_deffer_sig, color='r', alpha=0.7, linestyle='-', label='sig_p - DARK_sig - (sig - DARK_sig)')
         plt.plot(x_dark_ref, calc_deffer_ref, color='b', alpha=0.7, linestyle='-', label='ref_p - DARK_ref - (ref - DARK_ref)')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Difference')
+        plt.legend()
         plt.grid()
         plt.get_current_fig_manager().window.setGeometry(900, 100, 400, 800)
         plt.tight_layout()
