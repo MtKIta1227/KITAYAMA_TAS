@@ -127,7 +127,7 @@ class DataGraphApp(QMainWindow):
         _, y_ref_p = self.parse_data(self.text_boxes['ref_p'].toPlainText())
         _, y_sig_p = self.parse_data(self.text_boxes['sig_p'].toPlainText())
 
-        # 計算
+        # ダークデータを引いた値を計算
         results = {
             'ref - DARK_ref': [ref - dark_ref for dark_ref, ref in zip(y_dark_ref, y_ref)],
             'sig - DARK_sig': [sig - dark_sig for dark_sig, sig in zip(y_dark_sig, y_sig)],
@@ -135,61 +135,45 @@ class DataGraphApp(QMainWindow):
             'sig_p - DARK_sig': [sig_p - dark_sig for dark_sig, sig_p in zip(y_dark_sig, y_sig_p)],
         }
 
-        #差分を計算
-        calc_deffer = [
-            sig_p_raw - dark_sig - (sig_dark_raw - dark_sig) - (ref_p_raw - dark_ref - (ref_dark_raw - dark_ref))
-            for sig_p_raw, dark_sig, sig_dark_raw, ref_p_raw, dark_ref, ref_dark_raw in zip(
-                y_sig_p, y_dark_sig, y_sig, y_ref_p, y_dark_ref, y_ref)
-        ]
 
+        #Sig ダークデータを引き、ポンプ有り無しの差を計算
         calc_deffer_sig = [
             sig_p_raw - dark_sig - (sig_dark_raw - dark_sig)
             for sig_p_raw, dark_sig, sig_dark_raw in zip(
                 y_sig_p, y_dark_sig, y_sig)
         ]
-        #2乗を計算
-        squared_result = [result ** 2 for result in calc_deffer_sig]
+
+        #絶対値を計算
+        calc_deffer_sig = [abs(result) for result in calc_deffer_sig]
+
         #最大値で正規化
-        max_value = max(squared_result)
-        calc_deffer_sig = [result / max_value for result in squared_result]
+        max_value = max(calc_deffer_sig)
+        calc_deffer_sig = [result / max_value for result in calc_deffer_sig]
 
-
+        #Ref ダークデータを引き、ポンプ有り無しの差を計算
         calc_deffer_ref = [
             ref_p_raw - dark_ref - (ref_dark_raw - dark_ref)
             for ref_p_raw, dark_ref, ref_dark_raw in zip(
                 y_ref_p, y_dark_ref, y_ref)
         ]
-        #2乗を計算
-        squared_result = [result ** 2 for result in calc_deffer_ref]
+        #絶対値を計算
+        calc_deffer_ref = [abs(result) for result in calc_deffer_ref]
+
         #最大値で正規化
-        max_value = max(squared_result)
-        calc_deffer_ref = [result / max_value for result in squared_result]
+        max_value = max(calc_deffer_ref)
+        calc_deffer_ref = [result / max_value for result in calc_deffer_ref]
 
         #calc_deffer_sigとcalc_deffer_refの差を計算
         calc_deffer = [sig - ref for sig, ref in zip(calc_deffer_sig, calc_deffer_ref)]
 
         #絶対値を計算
         calc_deffer = [abs(result) for result in calc_deffer]
+
         #規格化
         max_value = max(calc_deffer)
         calc_deffer = [result / max_value for result in calc_deffer]
 
-        
-
-        print(calc_deffer)
-
-        # 2乗を計算
-        squared_result = [result ** 2 for result in calc_deffer]
-
-        # 平方根を計算
-        sqrt_result = [np.sqrt(result) for result in squared_result]
-
-        #最大値で正規化
-        max_value = max(calc_deffer)
-        sqrt_result = [result / max_value for result in sqrt_result]
-
-
-        # LOG計算
+        # LOG計算 (ΔAbsの計算)
         log_values = []
         for ref_p_real, sig_real, sig_p_real, ref_real in zip(
                 results['ref_p - DARK_ref'], results['sig - DARK_sig'], results['sig_p - DARK_sig'], results['ref - DARK_ref']):
@@ -203,6 +187,7 @@ class DataGraphApp(QMainWindow):
         log_fig = plt.figure(figsize=(6, 4))
         plt.plot(x_dark_ref, log_values, color='black', alpha=0.7, linestyle='-',
                  label='LOG((ref_p - DARK_ref) * (sig - DARK_sig) / (sig_p - DARK_sig) / (ref - DARK_ref))')
+        
         #y軸の-0.01から0.01の範囲を緑色でハイライト
         plt.axhspan(-0.01, 0.01, color='green', alpha=0.2)
         #plt.axhline(0.01, color='red', alpha=0.8, linestyle='--')
@@ -238,7 +223,7 @@ class DataGraphApp(QMainWindow):
         plt.tight_layout()
         plt.grid()
 
-        # 下部 (新しい計算式の平方根の結果グラフ)
+        # 下部
         plt.subplot(3, 1, 3)  # 3行1列の配置の3つ目
         plt.plot(x_dark_ref, calc_deffer, color='k', alpha=0.6, linestyle='-', label='a-b')
         plt.plot(x_dark_ref, calc_deffer_sig, color='r', alpha=0.6, linestyle='-', label='a = sig_p - DARK_sig - (sig - DARK_sig)')
@@ -289,9 +274,17 @@ class DataGraphApp(QMainWindow):
                 'sig_p': y_sig_p
             })
 
-            # ΔAbsの計算を追加
-            delta_abs = [sig - dark_sig for sig, dark_sig in zip(y_sig, y_dark_sig)]
-            df_graph['ΔAbs'] = delta_abs
+            # ΔAbsの計算結果を追加
+            log_values = []
+            for ref_p_real, sig_real, sig_p_real, ref_real in zip(
+                    y_ref_p, y_sig, y_sig_p, y_ref):
+                if ref_real != 0 and sig_p_real != 0:
+                    log_value = np.log((ref_p_real * sig_real) / (sig_p_real * ref_real))
+                    log_values.append(log_value)
+                else:
+                    log_values.append(np.nan)
+            df_graph['ΔAbs'] = log_values
+            
 
             # データをExcelに保存
             with pd.ExcelWriter(file_path) as writer:
