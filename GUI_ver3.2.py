@@ -308,7 +308,7 @@ class DataGraphApp(QMainWindow):
                     log_values.append(np.nan)
 
             #プロットの色が追加が古いものが薄くなっていくようにする
-            alpha = 1 - list(self.pulse_data.keys()).index(pulse) / len(self.pulse_data.keys())
+            alpha = 1 - list(self.pulse_data.keys()).index(pulse) / len(self.pulse_data.keys())*0.8
             plt.plot(x_dark_ref, log_values, alpha=alpha, label=pulse, color='black', linestyle='-', linewidth=1)
 
 
@@ -317,7 +317,6 @@ class DataGraphApp(QMainWindow):
             plt.ylabel('ΔAbs')
             plt.legend()
             plt.title('Transient Absorption Spectrum with Overlaid Pulses')
-            plt.grid()
             plt.tight_layout()
             plt.show()
 
