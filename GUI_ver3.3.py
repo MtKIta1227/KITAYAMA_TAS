@@ -141,7 +141,7 @@ class DataGraphApp(QMainWindow):
                 return
 
             plt.figure(figsize=(1.5, 1))
-            plt.plot(x_values, y_values, color='blue', alpha=0.7, linestyle='-', linewidth=1)
+            plt.plot(x_values, y_values, color='k', alpha=0.7, linestyle='-', linewidth=1)
             plt.grid()
             plt.axis('off')
             plt.xlim(min(x_values), max(x_values) if x_values else 1)
@@ -295,7 +295,7 @@ class DataGraphApp(QMainWindow):
         # 選択されたパルスのデータを重ね書き
         selected_items = self.pulse_list.selectedItems()
         plt.figure(figsize=(6, 4))
-
+        
         x_dark_ref, y_dark_ref = self.parse_data(self.text_boxes['DARK_ref'].toPlainText())
         _, y_dark_sig = self.parse_data(self.text_boxes['DARK_sig'].toPlainText())
         _, y_ref = self.parse_data(self.text_boxes['ref'].toPlainText())
@@ -322,8 +322,9 @@ class DataGraphApp(QMainWindow):
                         log_values.append(log_value)
                     else:
                         log_values.append(np.nan)
-
-                plt.plot(x_dark_ref, log_values, alpha=0.7, label=pulse_value)
+                #プロットの色が追加が古いものが薄くなっていくように設定
+                alpha = 1 - list(self.pulse_data.keys()).index(pulse_value) / len(self.pulse_data.keys())*0.8
+                plt.plot(x_dark_ref_pulse, log_values, label=pulse_value, alpha=alpha, color='black', linestyle='-', linewidth=1)
 
         plt.xlabel('Wavelength / nm')
         plt.ylabel('ΔAbs')
