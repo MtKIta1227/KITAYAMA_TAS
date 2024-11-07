@@ -10,7 +10,7 @@ import pandas as pd
 class DataGraphApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("データグラフ作成")
+        self.setWindowTitle("TAS_Grapher_ver3.2")
         self.resize(400, 600)
 
         # パルスを保存する辞書
@@ -316,7 +316,7 @@ class DataGraphApp(QMainWindow):
             plt.xlabel('Wavelength / nm')
             plt.ylabel('ΔAbs')
             plt.legend()
-            plt.title('Transient Absorption Spectrum with Overlaid Pulses')
+            plt.title('Transient Absorption Spectra Overlaid')
             plt.tight_layout()
             plt.show()
 
