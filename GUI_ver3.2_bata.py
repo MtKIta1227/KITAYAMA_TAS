@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QFileDialog, QSizePolicy, QToolBar, QComboBox, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QFileDialog, QSizePolicy, QToolBar, QListWidget, QMessageBox
 from PyQt5.QtGui import QPixmap
 import json
 import os
@@ -30,41 +30,50 @@ class DataGraphApp(QMainWindow):
         load_button.clicked.connect(self.load_data)
         self.toolbar.addWidget(load_button)
 
-        load_all_button = QPushButton("Load All Data")  # 新しいボタン
-        load_all_button.clicked.connect(self.load_all_data)  # 新しいメソッド
+        load_all_button = QPushButton("Load All Data")
+        load_all_button.clicked.connect(self.load_all_data)
         self.toolbar.addWidget(load_all_button)
 
         plot_button = QPushButton("Plot")
         plot_button.clicked.connect(self.plot_graph)
         self.toolbar.addWidget(plot_button)
 
+        abs_plot_button = QPushButton("Plot ABS")  # 新しいボタン
+        abs_plot_button.clicked.connect(self.plot_abs)  # 新しいメソッド
+        self.toolbar.addWidget(abs_plot_button)
+
         save_button = QPushButton("Save")
         save_button.clicked.connect(self.save_data)
         self.toolbar.addWidget(save_button)
 
-        save_all_button = QPushButton("Save All Data")  # 新しいボタン
-        save_all_button.clicked.connect(self.save_all_data)  # 新しいメソッド
+        save_all_button = QPushButton("Save All Data")
+        save_all_button.clicked.connect(self.save_all_data)
         self.toolbar.addWidget(save_all_button)
 
         save_excel_button = QPushButton("Output Excel")
         save_excel_button.clicked.connect(self.save_data_to_excel)
         self.toolbar.addWidget(save_excel_button)
 
+        overlay_selected_button = QPushButton("Overlay Selected Pulses")
+        overlay_selected_button.clicked.connect(self.overlay_selected_pulses)
+        self.toolbar.addWidget(overlay_selected_button)
+
         # パルス入力用のレイアウト
         pulse_layout = QHBoxLayout()
         self.pulse_input = QPlainTextEdit()
         self.pulse_input.setFixedSize(100, 30)
         pulse_button = QPushButton("Save Pulse Data")
-        pulse_button.clicked.connect(self.save_pulse_data)  # パルスデータ保存ボタン
+        pulse_button.clicked.connect(self.save_pulse_data)
 
         pulse_layout.addWidget(QLabel("Pulse:"))
         pulse_layout.addWidget(self.pulse_input)
         pulse_layout.addWidget(pulse_button)
         main_layout.addLayout(pulse_layout)
 
-        # パルスリストの表示をQComboBoxに変更
-        self.pulse_list = QComboBox()
-        self.pulse_list.currentIndexChanged.connect(self.load_selected_pulse_data)
+        # パルスリストの表示をQListWidgetに変更
+        self.pulse_list = QListWidget()
+        self.pulse_list.setSelectionMode(QListWidget.MultiSelection)
+        self.pulse_list.itemClicked.connect(self.load_selected_pulse_data)  # 新しいシグナル接続
         main_layout.addWidget(QLabel("Saved Pulses:"))
         main_layout.addWidget(self.pulse_list)
 
@@ -85,11 +94,6 @@ class DataGraphApp(QMainWindow):
         # 左側と右側のレイアウトをメインレイアウトに追加
         main_layout.addLayout(dark_layout)
         main_layout.addLayout(remaining_layout)
-
-        # 重ね書きボタンの追加
-        overlay_button = QPushButton("Overlay Pulses")
-        overlay_button.clicked.connect(self.overlay_pulses)
-        main_layout.addWidget(overlay_button)
 
         self.setCentralWidget(main_widget)
 
@@ -127,16 +131,14 @@ class DataGraphApp(QMainWindow):
         if data.strip():
             x_values, y_values = self.parse_data(data)
 
-            # xとyの長さが一致するか確認
             if len(x_values) != len(y_values):
-                # メッセージボックスを表示
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Warning)
                 msg.setText("警告: xとyの長さが一致しません。")
-                msg.setInformativeText(f"x: {len(x_values)}, y: {len(y_values)}")
+                msg.setInformativeText(f"xの長さ: {len(x_values)}, yの長さ: {len(y_values)}")
                 msg.setWindowTitle("データエラー")
                 msg.exec_()
-                return  # 不一致の場合は処理を中止
+                return
 
             plt.figure(figsize=(1.5, 1))
             plt.plot(x_values, y_values, color='blue', alpha=0.7, linestyle='-', linewidth=1)
@@ -263,11 +265,37 @@ class DataGraphApp(QMainWindow):
         plt.tight_layout()
         plt.show()
 
-    def overlay_pulses(self):
-        # 重ね書き用のグラフを描画
+    def plot_abs(self):
+        # ABSのプロットを行う
+        x_dark_ref, y_dark_ref = self.parse_data(self.text_boxes['DARK_ref'].toPlainText())
+        _, y_dark_sig = self.parse_data(self.text_boxes['DARK_sig'].toPlainText())  
+        _, y_ref = self.parse_data(self.text_boxes['ref'].toPlainText())
+        _, y_ref_p = self.parse_data(self.text_boxes['ref_p'].toPlainText())
+        _, y_sig = self.parse_data(self.text_boxes['sig'].toPlainText())
+        _, y_sig_p = self.parse_data(self.text_boxes['sig_p'].toPlainText())
+
+        # ABSの計算
+        abs_ref = np.log((np.array(y_ref) - np.array(y_dark_ref)) / (np.array(y_ref_p) - np.array(y_dark_ref)))
+        abs_sig = np.log((np.array(y_sig) - np.array(y_dark_sig)) / (np.array(y_sig_p) - np.array(y_dark_sig)))
+
+        # プロット
+        plt.figure(figsize=(8, 6))
+        plt.plot(x_dark_ref, abs_ref, label='log((ref - DARK_ref) / (ref_p - DARK_ref))', color='blue')
+        plt.plot(x_dark_ref, abs_sig, label='log((sig - DARK_sig) / (sig_p - DARK_sig))', color='orange')
+        plt.title('Normal Absorbance')
+        plt.xlabel('Wavelength / nm')
+        plt.ylabel('Absorbance')
+        plt.axhline(0, color='black', linewidth=0.5, linestyle='--')
+        plt.legend()
+        plt.grid()
+        plt.tight_layout()
+        plt.show()
+
+    def overlay_selected_pulses(self):
+        # 選択されたパルスのデータを重ね書き
+        selected_items = self.pulse_list.selectedItems()
         plt.figure(figsize=(6, 4))
 
-        # 各テキストボックスからデータを取得
         x_dark_ref, y_dark_ref = self.parse_data(self.text_boxes['DARK_ref'].toPlainText())
         _, y_dark_sig = self.parse_data(self.text_boxes['DARK_sig'].toPlainText())
         _, y_ref = self.parse_data(self.text_boxes['ref'].toPlainText())
@@ -275,50 +303,34 @@ class DataGraphApp(QMainWindow):
         _, y_ref_p = self.parse_data(self.text_boxes['ref_p'].toPlainText())
         _, y_sig_p = self.parse_data(self.text_boxes['sig_p'].toPlainText())
 
-        # ダークデータを引いた値を計算
-        results = {
-            'ref - DARK_ref': [ref - dark_ref for dark_ref, ref in zip(y_dark_ref, y_ref)],
-            'sig - DARK_sig': [sig - dark_sig for dark_sig, sig in zip(y_dark_sig, y_sig)],
-            'ref_p - DARK_ref': [ref_p - dark_ref for dark_ref, ref_p in zip(y_dark_ref, y_ref_p)],
-            'sig_p - DARK_sig': [sig_p - dark_sig for dark_sig, sig_p in zip(y_dark_sig, y_sig_p)],
-        }
-
-        # グリッドを設定
         plt.grid(True)
+        for item in selected_items:
+            pulse_value = item.text()
+            if pulse_value in self.pulse_data:
+                pulse_data = self.pulse_data[pulse_value]
+                x_dark_ref_pulse, y_dark_ref = self.parse_data(pulse_data['DARK_ref'])
+                _, y_dark_sig = self.parse_data(pulse_data['DARK_sig'])
+                _, y_ref = self.parse_data(pulse_data['ref'])
+                _, y_sig = self.parse_data(pulse_data['sig'])
+                _, y_ref_p = self.parse_data(pulse_data['ref_p'])
+                _, y_sig_p = self.parse_data(pulse_data['sig_p'])
 
-        # 重ね書きのプロット
-        for pulse in self.pulse_data.keys():
-            pulse_data = self.pulse_data[pulse]
-            # log計算
-            x_dark_ref, y_dark_ref = self.parse_data(pulse_data['DARK_ref'])
-            _, y_dark_sig = self.parse_data(pulse_data['DARK_sig'])
-            _, y_ref = self.parse_data(pulse_data['ref'])
-            _, y_sig = self.parse_data(pulse_data['sig'])
-            _, y_ref_p = self.parse_data(pulse_data['ref_p'])
-            _, y_sig_p = self.parse_data(pulse_data['sig_p'])
+                log_values = []
+                for ref_p_real, sig_real, sig_p_real, ref_real in zip(y_ref_p, y_sig, y_sig_p, y_ref):
+                    if ref_real != 0 and sig_p_real != 0:
+                        log_value = np.log((ref_p_real * sig_real) / (sig_p_real * ref_real))
+                        log_values.append(log_value)
+                    else:
+                        log_values.append(np.nan)
 
-            # LOG計算 (ΔAbsの計算)  
-            log_values = []
-            for ref_p_real, sig_real, sig_p_real, ref_real in zip(
-                    y_ref_p, y_sig, y_sig_p, y_ref):
-                if ref_real != 0 and sig_p_real != 0:
-                    log_value = np.log((ref_p_real * sig_real) / (sig_p_real * ref_real))
-                    log_values.append(log_value)
-                else:
-                    log_values.append(np.nan)
+                plt.plot(x_dark_ref, log_values, alpha=0.7, label=pulse_value)
 
-            #プロットの色が追加が古いものが薄くなっていくようにする
-            alpha = 1 - list(self.pulse_data.keys()).index(pulse) / len(self.pulse_data.keys())*0.8
-            plt.plot(x_dark_ref, log_values, alpha=alpha, label=pulse, color='black', linestyle='-', linewidth=1)
-
-
-
-            plt.xlabel('Wavelength / nm')
-            plt.ylabel('ΔAbs')
-            plt.legend()
-            plt.title('Transient Absorption Spectra Overlaid')
-            plt.tight_layout()
-            plt.show()
+        plt.xlabel('Wavelength / nm')
+        plt.ylabel('ΔAbs')
+        plt.legend()
+        plt.title('Transient Absorption Spectrum Overlay')
+        plt.tight_layout()
+        plt.show()
 
     def save_data(self):
         data = {label: self.text_boxes[label].toPlainText() for label in self.text_boxes}
@@ -358,18 +370,16 @@ class DataGraphApp(QMainWindow):
         if file_path:
             with open(file_path, 'r') as f:
                 self.pulse_data = json.load(f)
-            self.update_pulse_list()  # パルスリストを更新
+            self.update_pulse_list()
             print("すべてのパルスデータが読み込まれました:", file_path)
 
     def save_data_to_excel(self):
-        # エクセルファイルの保存先を選択
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getSaveFileName(self, "エクセルファイルを保存", "", "Excel Files (*.xlsx);;All Files (*)", options=options)
         
         if file_path:
             with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
                 for pulse, data in self.pulse_data.items():
-                    # データを抽出
                     x_dark_ref, y_dark_ref = self.parse_data(data['DARK_ref'])
                     _, y_dark_sig = self.parse_data(data['DARK_sig'])
                     _, y_ref = self.parse_data(data['ref'])
@@ -377,7 +387,6 @@ class DataGraphApp(QMainWindow):
                     _, y_ref_p = self.parse_data(data['ref_p'])
                     _, y_sig_p = self.parse_data(data['sig_p'])
 
-                    # DataFrameを作成
                     df = pd.DataFrame({
                         'Wavelength': x_dark_ref,
                         'DARK_ref': y_dark_ref,
@@ -387,31 +396,31 @@ class DataGraphApp(QMainWindow):
                         'ref_p': y_ref_p,
                         'sig_p': y_sig_p
                     })
-                    # log計算したデータを追加
+
                     log_values = []
-                    for ref_p_real, sig_real, sig_p_real, ref_real in zip(
-                            y_ref_p, y_sig, y_sig_p, y_ref):
+                    for ref_p_real, sig_real, sig_p_real, ref_real in zip(y_ref_p, y_sig, y_sig_p, y_ref):
                         if ref_real != 0 and sig_p_real != 0:
                             log_value = np.log((ref_p_real * sig_real) / (sig_p_real * ref_real))
                             log_values.append(log_value)
                         else:
                             log_values.append(np.nan)
                     df['ΔAbs'] = log_values
-                    # パルス名でシートを作成
                     df.to_excel(writer, sheet_name=pulse, index=False)
             
             print("データがエクセルファイルに保存されました:", file_path)
 
     def load_selected_pulse_data(self):
-        pulse_value = self.pulse_list.currentText()  # currentItem()からcurrentText()に変更
-        if pulse_value:
+        selected_items = self.pulse_list.selectedItems()
+        if selected_items:
+            # 最初の選択されたアイテムのみを処理
+            pulse_value = selected_items[0].text()
             if pulse_value in self.pulse_data:
                 data = self.pulse_data[pulse_value]
                 for label, content in data.items():
                     if label in self.text_boxes:
                         self.text_boxes[label].setPlainText(content)
                 print(f"Pulse {pulse_value}のデータが読み込まれました。")
-                self.setWindowTitle(f"データグラフ作成 - {pulse_value}")  # ウィンドウ名を更新
+                self.setWindowTitle(f"データグラフ作成 - {pulse_value}")
             else:
                 print(f"Pulse {pulse_value}のデータは見つかりません。")
 
@@ -423,7 +432,6 @@ class DataGraphApp(QMainWindow):
     def save_pulse_data(self):
         pulse_value = self.pulse_input.toPlainText().strip()
         if pulse_value:
-            # 既存のデータがあれば更新し、なければ新しく追加
             self.pulse_data[pulse_value] = {
                 'DARK_ref': self.text_boxes['DARK_ref'].toPlainText(),
                 'DARK_sig': self.text_boxes['DARK_sig'].toPlainText(),
@@ -432,7 +440,7 @@ class DataGraphApp(QMainWindow):
                 'ref_p': self.text_boxes['ref_p'].toPlainText(),
                 'sig_p': self.text_boxes['sig_p'].toPlainText()
             }
-            self.update_pulse_list()  # パルスリストを更新
+            self.update_pulse_list()
             print(f"Pulse {pulse_value}が保存されました。")
         else:
             print("パルス名が空です。")
