@@ -1,0 +1,44 @@
+Sub CreateLineOnlyScatterChart()
+    Dim ws As Worksheet
+    Dim chartObj As ChartObject
+    Dim lastRow As Long
+    Dim xMin As Double
+    Dim xMax As Double
+
+    ' 各シートをループ
+    For Each ws In ThisWorkbook.Worksheets
+        ' A列とH列の最終行を取得
+        lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+        ' A列の最小値と最大値を取得
+        xMin = Application.WorksheetFunction.Min(ws.Range("A1:A" & lastRow))
+        xMax = Application.WorksheetFunction.Max(ws.Range("A1:A" & lastRow))
+
+        ' グラフオブジェクトを作成
+        Set chartObj = ws.ChartObjects.Add(Left:=100, Top:=50, Width:=400, Height:=300)
+        
+        ' A列をX軸、H列をY軸としてデータ範囲を設定
+        chartObj.Chart.ChartType = xlXYScatterLines
+        chartObj.Chart.SetSourceData Source:=ws.Range("A1:A" & lastRow & ", H1:H" & lastRow)
+
+        ' グラフのタイトルと軸ラベルを設定
+        chartObj.Chart.HasTitle = True
+        chartObj.Chart.ChartTitle.Text = "A列 vs H列の線のみ散布図"
+        chartObj.Chart.Axes(xlCategory, xlPrimary).HasTitle = True
+        chartObj.Chart.Axes(xlCategory, xlPrimary).AxisTitle.Text = "A列 (X軸)"
+        chartObj.Chart.Axes(xlValue, xlPrimary).HasTitle = True
+        chartObj.Chart.Axes(xlValue, xlPrimary).AxisTitle.Text = "H列 (Y軸)"
+
+        ' X軸のスケールをA列のデータ範囲に合わせる
+        With chartObj.Chart.Axes(xlCategory)
+            .MinimumScale = xMin
+            .MaximumScale = xMax
+        End With
+
+        ' マーカーを非表示にし、線のみ表示
+        With chartObj.Chart.SeriesCollection(1)
+            .Format.Line.Visible = msoTrue
+            .MarkerStyle = xlMarkerStyleNone
+        End With
+    Next ws
+End Sub
