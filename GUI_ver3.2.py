@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QFileDialog, QSizePolicy, QToolBar, QComboBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QFileDialog, QSizePolicy, QToolBar, QComboBox, QMessageBox
 from PyQt5.QtGui import QPixmap
 import json
 import os
@@ -126,6 +126,18 @@ class DataGraphApp(QMainWindow):
         plt.clf()
         if data.strip():
             x_values, y_values = self.parse_data(data)
+
+            # xとyの長さが一致するか確認
+            if len(x_values) != len(y_values):
+                # メッセージボックスを表示
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Warning)
+                msg.setText("警告: xとyの長さが一致しません。")
+                msg.setInformativeText(f"xの長さ: {len(x_values)}, yの長さ: {len(y_values)}")
+                msg.setWindowTitle("データエラー")
+                msg.exec_()
+                return  # 不一致の場合は処理を中止
+
             plt.figure(figsize=(1.5, 1))
             plt.plot(x_values, y_values, color='blue', alpha=0.7, linestyle='-', linewidth=1)
             plt.grid()
@@ -145,8 +157,11 @@ class DataGraphApp(QMainWindow):
         for line in data.splitlines():
             if line.strip():
                 parts = line.split()
-                x_values.append(float(parts[0]))
-                y_values.append(float(parts[1]))
+                try:
+                    x_values.append(float(parts[0]))
+                    y_values.append(float(parts[1]))
+                except (ValueError, IndexError) as e:
+                    QMessageBox.warning(self, "データエラー", f"データの解析中にエラーが発生しました: {e}")
         return x_values, y_values
 
     def plot_graph(self):
@@ -291,7 +306,13 @@ class DataGraphApp(QMainWindow):
                     log_values.append(log_value)
                 else:
                     log_values.append(np.nan)
-            plt.plot(x_dark_ref, log_values, label=f'Pulse {pulse}')
+
+            #プロットの色が追加が古いものが薄くなっていくようにする
+            alpha = 1 - list(self.pulse_data.keys()).index(pulse) / len(self.pulse_data.keys())
+            plt.plot(x_dark_ref, log_values, alpha=alpha, label=pulse, color='black', linestyle='-', linewidth=1)
+
+
+
             plt.xlabel('Wavelength / nm')
             plt.ylabel('ΔAbs')
             plt.legend()
