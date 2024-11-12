@@ -10,7 +10,7 @@ import pandas as pd
 class DataGraphApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("TAS_Grapher_ver3.2")
+        self.setWindowTitle("TAS_Grapher_ver3.4")
         self.resize(400, 600)
 
         # パルスを保存する辞書
@@ -135,6 +135,7 @@ class DataGraphApp(QMainWindow):
             else:
                 text_box.setStyleSheet("color: black;")  # 元の内容に戻った場合は黒に戻す
 
+    # グラフを更新するメソッド
     def update_graph(self, graph_widget, data):
         plt.clf()
         if data.strip():
@@ -438,7 +439,7 @@ class DataGraphApp(QMainWindow):
                         self.text_boxes[label].setStyleSheet("color: black;")  # フォント色を黒に設定
                         self.original_data[label] = content  # 元のデータを保持
                 print(f"Pulse {pulse_value}のデータが読み込まれました。")
-                self.setWindowTitle(f"Plot - {pulse_value}")
+                self.setWindowTitle(f"TAS_Grapher_ver3.4")
 
     def update_pulse_list(self):
         self.pulse_list.clear()
