@@ -26,37 +26,38 @@ class DataGraphApp(QMainWindow):
         self.addToolBar(self.toolbar)
 
         # ツールバーにボタンを追加
-        load_button = QPushButton("Load Data")
-        load_button.clicked.connect(self.load_data)
-        self.toolbar.addWidget(load_button)
 
-        load_all_button = QPushButton("Load All Data")
+        load_all_button = QPushButton("Load")
         load_all_button.clicked.connect(self.load_all_data)
         self.toolbar.addWidget(load_all_button)
 
-        plot_button = QPushButton("Plot")
+        plot_button = QPushButton("Plot ΔAbs")
         plot_button.clicked.connect(self.plot_graph)
         self.toolbar.addWidget(plot_button)
+
+        save_all_button = QPushButton("Save")
+        save_all_button.clicked.connect(self.save_all_data)
+        self.toolbar.addWidget(save_all_button)
+
+        overlay_selected_button = QPushButton("TAS")
+        overlay_selected_button.clicked.connect(self.overlay_selected_pulses)
+        self.toolbar.addWidget(overlay_selected_button)
 
         abs_plot_button = QPushButton("Plot ABS")  # 新しいボタン
         abs_plot_button.clicked.connect(self.plot_abs)  # 新しいメソッド
         self.toolbar.addWidget(abs_plot_button)
 
-        save_button = QPushButton("Save")
+        load_button = QPushButton("Load Data (Single)")
+        load_button.clicked.connect(self.load_data)
+        self.toolbar.addWidget(load_button)
+
+        save_button = QPushButton("Save Data (Single)")
         save_button.clicked.connect(self.save_data)
         self.toolbar.addWidget(save_button)
-
-        save_all_button = QPushButton("Save All Data")
-        save_all_button.clicked.connect(self.save_all_data)
-        self.toolbar.addWidget(save_all_button)
 
         save_excel_button = QPushButton("Output Excel")
         save_excel_button.clicked.connect(self.save_data_to_excel)
         self.toolbar.addWidget(save_excel_button)
-
-        overlay_selected_button = QPushButton("Overlay Selected Pulses")
-        overlay_selected_button.clicked.connect(self.overlay_selected_pulses)
-        self.toolbar.addWidget(overlay_selected_button)
 
         # パルス入力用のレイアウト
         pulse_layout = QHBoxLayout()
@@ -259,6 +260,7 @@ class DataGraphApp(QMainWindow):
 
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Difference')
+        plt.ylim(0, 1)
         plt.legend()
         plt.grid()
 
@@ -322,7 +324,7 @@ class DataGraphApp(QMainWindow):
                         log_values.append(log_value)
                     else:
                         log_values.append(np.nan)
-                #プロットの色が追加が古いものが薄くなっていくように設定
+                #プロットの色が追加が古い順に青から緑になっていくように設定
                 alpha = 1 - list(self.pulse_data.keys()).index(pulse_value) / len(self.pulse_data.keys())*0.8
                 plt.plot(x_dark_ref_pulse, log_values, label=pulse_value, alpha=alpha, color='black', linestyle='-', linewidth=1)
 
