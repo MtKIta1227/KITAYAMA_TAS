@@ -168,6 +168,11 @@ class DataGraphApp(QMainWindow):
         return x_values, y_values
 
     def plot_graph(self):
+        #プロットするパルス名を取得
+        selected_items = self.pulse_list.selectedItems()
+        pulse_name = selected_items[0].text() if selected_items else "未選択"
+            
+
         # 各テキストボックスからデータを取得
         x_dark_ref, y_dark_ref = self.parse_data(self.text_boxes['DARK_ref'].toPlainText())
         _, y_dark_sig = self.parse_data(self.text_boxes['DARK_sig'].toPlainText())
@@ -220,7 +225,7 @@ class DataGraphApp(QMainWindow):
         plt.plot(x_dark_ref, log_values, color='black', alpha=0.7, linestyle='-',
                  label='LOG = log((ref_p * sig) / (sig_p * ref))')
         plt.axhspan(-0.01, 0.01, color='green', alpha=0.2)
-        plt.title('Transient Absorption Spectrum')
+        plt.title(f'Transient Absorption Spectrum -{pulse_name}-')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('ΔAbs')
         plt.legend()
@@ -239,6 +244,7 @@ class DataGraphApp(QMainWindow):
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Counts')
         plt.legend()
+        plt.title(f'-{pulse_name}-')
         plt.tight_layout()
         plt.grid()
 
