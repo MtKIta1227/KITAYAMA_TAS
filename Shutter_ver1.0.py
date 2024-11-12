@@ -24,13 +24,19 @@ def connect_serial_port(port):
     """Arduinoに接続します。"""
     return serial.Serial(port, 9600, timeout=1)
 
+def angle_to_steps(angle):
+    """角度をステップ数に変換します。"""
+    steps_per_degree = 512 / 360
+    return int(angle * steps_per_degree)
+
 def on_run_motor():
     try:
-        steps = int(steps_entry.get())  # ステップ数を整数として取得
+        angle = float(steps_entry.get())  # 角度を浮動小数点数として取得
+        steps = angle_to_steps(angle)  # 角度をステップ数に変換
         direction = direction_var.get()
         operate_motor(arduino, steps, direction)
     except ValueError:
-        messagebox.showerror("エラー", "モーターのステップ数は整数で入力してください。")
+        messagebox.showerror("エラー", "モーターの角度は数値で入力してください。")
 
 def connect_to_selected_port():
     global arduino
@@ -62,8 +68,8 @@ connect_button = tk.Button(root, text="接続", command=connect_to_selected_port
 connect_button.grid(row=0, column=2)
 
 # モーターの入力フィールド
-tk.Label(root, text="モーター ステップ数:").grid(row=1, column=0)
-steps_entry = tk.Entry(root)  # ステップ数入力用エントリ
+tk.Label(root, text="モーター 角度:").grid(row=1, column=0)
+steps_entry = tk.Entry(root)  # 角度入力用エントリ
 steps_entry.grid(row=1, column=1)
 
 direction_var = StringVar(value="1")  # 初期値をCWに設定
