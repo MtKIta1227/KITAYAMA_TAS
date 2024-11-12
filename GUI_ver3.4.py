@@ -225,12 +225,12 @@ class DataGraphApp(QMainWindow):
         plt.ylabel('ΔAbs')
         plt.legend()
         plt.grid()
-        plt.get_current_fig_manager().window.setGeometry(100, 100, 800, 400)
         plt.tight_layout()
+        plt.get_current_fig_manager().window.setGeometry(600, 100, 800, 400)
         plt.show()
 
         # ref と DARK_ref、sig と DARK_sig のグラフを同じウィンドウで表示
-        combined_fig = plt.figure(figsize=(6, 10))  # 高さを調整
+        plt.figure(figsize=(6, 10))  # 高さを調整
 
         # 上部 (ref と DARK_ref および ref_p と DARK_ref のグラフ)
         plt.subplot(3, 1, 1)  # 3行1列の配置の1つ目
@@ -414,18 +414,18 @@ class DataGraphApp(QMainWindow):
 
     def load_selected_pulse_data(self):
         selected_items = self.pulse_list.selectedItems()
-        if selected_items:
-            # 最初の選択されたアイテムのみを処理
-            pulse_value = selected_items[0].text()
+        if len(selected_items) == 1:  # 選択されたアイテムが1つだけの場合
+            pulse_value = selected_items[0].text()  # 最初の選択されたアイテムのテキストを取得
             if pulse_value in self.pulse_data:
                 data = self.pulse_data[pulse_value]
                 for label, content in data.items():
                     if label in self.text_boxes:
-                        self.text_boxes[label].setPlainText(content)
+                        self.text_boxes[label].setPlainText(content)  # テキストボックスにデータを設定
                 print(f"Pulse {pulse_value}のデータが読み込まれました。")
                 self.setWindowTitle(f"データグラフ作成 - {pulse_value}")
-            else:
-                print(f"Pulse {pulse_value}のデータは見つかりません。")
+        else:
+            # 複数のアイテムが選択されている場合は何もしない
+            print("複数のパルスが選択されています。")
 
     def update_pulse_list(self):
         self.pulse_list.clear()
