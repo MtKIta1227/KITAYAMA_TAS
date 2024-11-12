@@ -31,13 +31,13 @@ class DataGraphApp(QMainWindow):
         load_all_button.clicked.connect(self.load_all_data)
         self.toolbar.addWidget(load_all_button)
 
-        plot_button = QPushButton("Plot ΔAbs")
-        plot_button.clicked.connect(self.plot_graph)
-        self.toolbar.addWidget(plot_button)
-
         save_all_button = QPushButton("Save")
         save_all_button.clicked.connect(self.save_all_data)
         self.toolbar.addWidget(save_all_button)
+
+        plot_button = QPushButton("Plot ΔAbs")
+        plot_button.clicked.connect(self.plot_graph)
+        self.toolbar.addWidget(plot_button)
 
         overlay_selected_button = QPushButton("TAS")
         overlay_selected_button.clicked.connect(self.overlay_selected_pulses)
@@ -428,7 +428,7 @@ class DataGraphApp(QMainWindow):
                     if label in self.text_boxes:
                         self.text_boxes[label].setPlainText(content)  # テキストボックスにデータを設定
                 print(f"Pulse {pulse_value}のデータが読み込まれました。")
-                self.setWindowTitle(f"データグラフ作成 - {pulse_value}")
+                self.setWindowTitle(f"Plot - {pulse_value}")
         else:
             # 複数のアイテムが選択されている場合は何もしない
             print("複数のパルスが選択されています。")
