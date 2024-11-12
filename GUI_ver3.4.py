@@ -15,6 +15,7 @@ class DataGraphApp(QMainWindow):
 
         # パルスを保存する辞書
         self.pulse_data = {}
+        self.original_data = {} #元のデータを保存する辞書
 
         # メインウィジェットとレイアウト
         main_widget = QWidget()
@@ -124,8 +125,15 @@ class DataGraphApp(QMainWindow):
 
     def update_graphs(self):
         for label, text_box in self.text_boxes.items():
+            # 現在のテキストボックスの内容を取得
             data = text_box.toPlainText()
-            self.update_graph(self.graph_widgets[label], data)
+            self.update_graph(self.graph_widgets[label], data)  # グラフを更新  
+    
+            # 元のデータと比較
+            if data != self.original_data.get(label, ""):  # 内容が変更された場合
+                text_box.setStyleSheet("color: red;")  # 変更されたことを示す色
+            else:
+                text_box.setStyleSheet("color: black;")  # 元の内容に戻った場合は黒に戻す
 
     def update_graph(self, graph_widget, data):
         plt.clf()
@@ -427,11 +435,10 @@ class DataGraphApp(QMainWindow):
                 for label, content in data.items():
                     if label in self.text_boxes:
                         self.text_boxes[label].setPlainText(content)  # テキストボックスにデータを設定
+                        self.text_boxes[label].setStyleSheet("color: black;")  # フォント色を黒に設定
+                        self.original_data[label] = content  # 元のデータを保持
                 print(f"Pulse {pulse_value}のデータが読み込まれました。")
                 self.setWindowTitle(f"Plot - {pulse_value}")
-        else:
-            # 複数のアイテムが選択されている場合は何もしない
-            print("複数のパルスが選択されています。")
 
     def update_pulse_list(self):
         self.pulse_list.clear()
