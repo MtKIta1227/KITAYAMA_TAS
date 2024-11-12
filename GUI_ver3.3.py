@@ -63,10 +63,10 @@ class DataGraphApp(QMainWindow):
         pulse_layout = QHBoxLayout()
         self.pulse_input = QPlainTextEdit()
         self.pulse_input.setFixedSize(100, 30)
-        pulse_button = QPushButton("Save Pulse Data")
+        pulse_button = QPushButton("Save DataSet")
         pulse_button.clicked.connect(self.save_pulse_data)
 
-        pulse_layout.addWidget(QLabel("Pulse:"))
+        pulse_layout.addWidget(QLabel("DataSet Name:"))
         pulse_layout.addWidget(self.pulse_input)
         pulse_layout.addWidget(pulse_button)
         main_layout.addLayout(pulse_layout)
@@ -75,7 +75,7 @@ class DataGraphApp(QMainWindow):
         self.pulse_list = QListWidget()
         self.pulse_list.setSelectionMode(QListWidget.MultiSelection)
         self.pulse_list.itemClicked.connect(self.load_selected_pulse_data)  # 新しいシグナル接続
-        main_layout.addWidget(QLabel("Saved Pulses:"))
+        main_layout.addWidget(QLabel("Saved Data list:"))
         main_layout.addWidget(self.pulse_list)
 
         # 左側のレイアウト (ダークデータ)
