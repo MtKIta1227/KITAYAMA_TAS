@@ -53,9 +53,9 @@ def shutter_switch():
     global shutter_state
     # 180度回転
     angle = 180
-    #steps = angle_to_steps(angle)
-    #direction = direction_var.get()
-    #operate_motor(arduino, steps, direction)
+    steps = angle_to_steps(angle)
+    direction = direction_var.get()
+    operate_motor(arduino, steps, direction)
 
     # シャッター状態を切り替え
     if shutter_state.get() == "CLOSE":
