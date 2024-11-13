@@ -356,9 +356,9 @@ class DataGraphApp(QMainWindow):
                         log_values.append(log_value)
                     else:
                         log_values.append(np.nan)
-
-                alpha = 1 - list(self.pulse_data.keys()).index(pulse_value) / len(self.pulse_data.keys()) * 0.8
-                plt.plot(x_dark_ref_pulse, log_values, label=pulse_value, alpha=alpha, color='black', linestyle='-', linewidth=1)
+                #color_deltaの値は追加順に薄くしていく。色はRGBで指定
+                color_deltaabs = (1 - list(self.pulse_data.keys()).index(pulse_value) / len(self.pulse_data.keys()) * 0.8, 0, 0)
+                plt.plot(x_dark_ref_pulse, log_values, label=pulse_value, color=color_deltaabs, linestyle='-', linewidth=1)
 
         plt.xlabel('Wavelength / nm')
         plt.ylabel('ΔAbs')
