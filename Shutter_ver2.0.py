@@ -48,6 +48,28 @@ def connect_to_selected_port():
     except Exception as e:
         messagebox.showerror("接続エラー", str(e))
 
+# シャッタースイッチ
+def shutter_switch():
+    global shutter_state
+    # 180度回転
+    angle = 180
+    #steps = angle_to_steps(angle)
+    #direction = direction_var.get()
+    #operate_motor(arduino, steps, direction)
+
+    # シャッター状態を切り替え
+    if shutter_state.get() == "CLOSE":
+        shutter_state.set("OPEN !!")
+        # 色を変更
+        shutter_state_label.config(fg="red")
+        shutter_state_label.config(font=("", 12, "bold"))
+    else:
+        shutter_state.set("CLOSE")
+        # 色を変更
+        shutter_state_label.config(fg="blue")
+        shutter_state_label.config(font=("", 12, "bold"))
+    shutter_state_label.config(text=f"Shutter : {shutter_state.get()}")
+
 # GUIの設定
 root = tk.Tk()
 root.title("Shutter Control")
@@ -58,7 +80,7 @@ selected_port = ports[0] if ports else None
 
 # シリアルポートの選択
 port_var = StringVar(value=selected_port)
-port_label = tk.Label(root, text="シリアルポートを選択:")
+port_label = tk.Label(root, text="シリアルポート:")
 port_label.grid(row=0, column=0)
 
 port_dropdown = ttk.Combobox(root, textvariable=port_var, values=ports)
@@ -68,17 +90,26 @@ connect_button = tk.Button(root, text="接続", command=connect_to_selected_port
 connect_button.grid(row=0, column=2)
 
 # モーターの入力フィールド
-tk.Label(root, text="モーター 角度:").grid(row=1, column=0)
+tk.Label(root, text="角度:").grid(row=1, column=0)
 steps_entry = tk.Entry(root)  # 角度入力用エントリ
 steps_entry.grid(row=1, column=1)
 
 direction_var = StringVar(value="1")  # 初期値をCWに設定
-tk.Label(root, text="モーター 方向:").grid(row=2, column=0)
+tk.Label(root, text="方向:").grid(row=2, column=0)
 tk.Radiobutton(root, text="CW", variable=direction_var, value="1").grid(row=2, column=1)
 tk.Radiobutton(root, text="CCW", variable=direction_var, value="-1").grid(row=2, column=2)
 
 run_button = tk.Button(root, text="Run", command=on_run_motor)
 run_button.grid(row=1, column=2)
+
+# シャッタースイッチボタン
+shutter_button = tk.Button(root, text="Shutter Switch", command=shutter_switch)
+shutter_button.grid(row=3, column=1)
+
+# シャッター状態表示ラベル
+shutter_state = StringVar(value="CLOSE")
+shutter_state_label = tk.Label(root, text=f"Shutter : {shutter_state.get()}")
+shutter_state_label.grid(row=4, column=1)
 
 root.mainloop()
 
