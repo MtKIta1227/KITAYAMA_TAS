@@ -12,6 +12,11 @@ class DataGraphApp(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        #global変数
+        global filter_width
+        filter_width = 5
+
+
         self.setWindowTitle("TAS_Grapher_ver3.6")
         # ウィンドウサイズをコンパクトにした
         self.resize(400, 500)
@@ -255,6 +260,8 @@ class DataGraphApp(QMainWindow):
                 log_values.append(log_value)
             else:
                 log_values.append(np.nan)
+        #移動平均の窓幅をfilter_widthに指定
+        log_values = np.convolve(log_values, np.ones(filter_width)/filter_width, mode='same')
 
         log_fig = plt.figure(figsize=(6, 4))
         plt.plot(x_dark_ref, log_values, color='black', alpha=0.7, linestyle='-',
@@ -356,9 +363,11 @@ class DataGraphApp(QMainWindow):
                         log_values.append(log_value)
                     else:
                         log_values.append(np.nan)
+                #移動平均の窓幅をfilter_widthに指定
+                log_values = np.convolve(log_values, np.ones(filter_width)/filter_width, mode='same')
                 #color_deltaの値は追加順に薄くしていく。色はRGBで指定
-                color_deltaabs = (1 - list(self.pulse_data.keys()).index(pulse_value) / len(self.pulse_data.keys()) * 0.8, 0, 0)
-                plt.plot(x_dark_ref_pulse, log_values, label=pulse_value, color=color_deltaabs, linestyle='-', linewidth=1)
+                color_deltaabs = (0 , 0, 1-list(self.pulse_data.keys()).index(pulse_value) / len(self.pulse_data.keys()) * 0.9)
+                plt.plot(x_dark_ref_pulse, log_values, label=pulse_value, color=color_deltaabs, linestyle='-', linewidth=1.5)
 
         plt.xlabel('Wavelength / nm')
         plt.ylabel('ΔAbs')
@@ -510,6 +519,8 @@ class DataGraphApp(QMainWindow):
                     log_values.append(log_value)
                 else:
                     log_values.append(np.nan)
+            #移動平均の窓幅をfilter_widthに指定
+            log_values = np.convolve(log_values, np.ones(filter_width)/filter_width, mode='same')
 
             # ΔAbsのプロット
             #color_deltaの値は追加順に薄くしていく。色はRGBで指定
