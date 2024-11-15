@@ -1,5 +1,4 @@
 import pyvisa
-import time
 import tkinter as tk
 from tkinter import messagebox
 
@@ -31,6 +30,8 @@ def disconnect_button_click():
 
 # 現在位置を更新する
 def update_position():
+    if instrument is None:
+        return
     try:
         r_data = instrument.query('AXI1:POS?')
         txtCurrentPosition.delete(0, tk.END)
@@ -57,7 +58,21 @@ def step_drive():
 # ポジションを設定
 def set_position():
     new_position = txtCurrentPosition.get()
-    instrument.write(f'AXI1:POS {new_position}')
+    try:
+        float(new_position)  # 数値チェック
+        instrument.write(f'AXI1:POS {new_position}')
+    except ValueError:
+        messagebox.showerror('エラー', '位置は数値でなければなりません')
+
+# 入力値が変更されたときの処理
+def on_value_change(event):
+    try:
+        # 速度とパルス数のバリデーション
+        speed = float(txtSpeed.get())
+        pulses = int(txtStep.get())
+        lblState['text'] = '値が正常です'
+    except ValueError:
+        lblState['text'] = '速度とパルス数は数値である必要があります'
 
 # テキストボックスやボタンを有効化
 def enable_controls():
@@ -96,6 +111,7 @@ btnDisconnect.pack(side=tk.LEFT, padx=5)
 tk.Label(root, text='速度 (pps)：').pack(pady=3)
 txtSpeed = tk.Entry(root, width=10)
 txtSpeed.pack(pady=3)
+txtSpeed.bind("<KeyRelease>", on_value_change)  # 値が変更されたときの処理をバインド
 
 # 現在位置表示
 tk.Label(root, text='現在位置：').pack(pady=3)
@@ -108,6 +124,7 @@ btnSetPosition.pack(pady=3)
 tk.Label(root, text='パルス数：').pack(pady=3)
 txtStep = tk.Entry(root, width=10)
 txtStep.pack(pady=3)
+txtStep.bind("<KeyRelease>", on_value_change)  # 値が変更されたときの処理をバインド
 btnStepDrive = tk.Button(root, text='ステップ駆動', command=step_drive, width=10)
 btnStepDrive.pack(pady=3)
 
