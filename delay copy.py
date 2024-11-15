@@ -40,18 +40,12 @@ def update_position():
         lblState['text'] = '位置取得エラー'
         messagebox.showerror('エラー', f'位置取得エラー: {str(e)}')
 
-# 駆動する
-def move_stage(direction):
-    speed = txtSpeed.get()
-    command = f'AXI1:L0 {speed}:GO {direction.get()}J'
-    instrument.write(command)
-    update_position()
-
 # ステップ駆動
 def step_drive():
     speed = txtSpeed.get()
     pulses = txtStep.get()
-    command = f'AXI1:L0 {speed}:PULS {pulses}:GO {direction.get()}'
+    direction_value = direction.get()
+    command = f'AXI1:L0 {speed}:PULS {pulses}:GO {direction_value}'
     instrument.write(command)
     update_position()
 
@@ -71,13 +65,12 @@ def on_value_change(event):
         speed = float(txtSpeed.get())
         pulses = int(txtStep.get())
         lblState['text'] = '値が正常です'
-        update_position()  # 値が変更されたら即座に位置を更新
     except ValueError:
         lblState['text'] = '速度とパルス数は数値である必要があります'
 
 # 駆動方向の変更時に即時更新
 def on_direction_change():
-    update_position()  # 方向が変わったときも位置を更新
+    lblState['text'] = f'方向が変更されました: {direction.get()}'
 
 # テキストボックスやボタンを有効化
 def enable_controls():
@@ -85,6 +78,7 @@ def enable_controls():
     txtStep.config(state='normal')
     txtCurrentPosition.config(state='normal')
     btnSetPosition.config(state='normal')
+    btnStepDrive.config(state='normal')
 
 # テキストボックスやボタンを無効化
 def disable_controls():
@@ -92,6 +86,7 @@ def disable_controls():
     txtStep.config(state='disabled')
     txtCurrentPosition.config(state='disabled')
     btnSetPosition.config(state='disabled')
+    btnStepDrive.config(state='disabled')
 
 # メインウィンドウの設定
 root = tk.Tk()
@@ -138,8 +133,8 @@ direction_frame = tk.Frame(root)
 direction_frame.pack(pady=5)
 
 direction = tk.StringVar(value='CCW')
-tk.Radiobutton(direction_frame, text='CCW', variable=direction, value='CCW', command=lambda: [on_direction_change(), update_position()]).pack(side=tk.LEFT, padx=5)
-tk.Radiobutton(direction_frame, text='CW', variable=direction, value='CW', command=lambda: [on_direction_change(), update_position()]).pack(side=tk.LEFT, padx=5)
+tk.Radiobutton(direction_frame, text='CCW', variable=direction, value='CCW', command=on_direction_change).pack(side=tk.LEFT, padx=5)
+tk.Radiobutton(direction_frame, text='CW', variable=direction, value='CW', command=on_direction_change).pack(side=tk.LEFT, padx=5)
 
 # メインループ
 root.mainloop()
