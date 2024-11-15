@@ -502,7 +502,7 @@ class DataGraphApp(QMainWindow):
         
         # 保存されたすべてのパルスデータに対してΔAbsを計算
         #グラフサイズをウィジェットに合わせる
-        plt.figure(figsize=(6, 2))
+        plt.figure(figsize=(5, 2))
         for pulse_name, data in self.pulse_data.items():
             x_dark_ref, y_dark_ref = self.parse_data(data['DARK_ref'])
             _, y_dark_sig = self.parse_data(data['DARK_sig'])
