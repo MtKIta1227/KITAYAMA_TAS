@@ -67,12 +67,18 @@ def set_position():
 # 入力値が変更されたときの処理
 def on_value_change(event):
     try:
-        # 速度とパルス数のバリデーション
         speed = float(txtSpeed.get())
         pulses = int(txtStep.get())
         lblState['text'] = '値が正常です'
+        # 値が変更されたら即座に位置を更新
+        step_drive()  # ステップ駆動を呼び出して即座に反映させる
     except ValueError:
         lblState['text'] = '速度とパルス数は数値である必要があります'
+
+# 駆動方向の変更時に位置を更新
+def on_direction_change():
+    move_stage(direction)  # 駆動方向が変わったときも即座に動かす
+    update_position()  # 位置を更新
 
 # テキストボックスやボタンを有効化
 def enable_controls():
@@ -133,8 +139,8 @@ direction_frame = tk.Frame(root)
 direction_frame.pack(pady=5)
 
 direction = tk.StringVar(value='CCW')
-tk.Radiobutton(direction_frame, text='CCW', variable=direction, value='CCW').pack(side=tk.LEFT, padx=5)
-tk.Radiobutton(direction_frame, text='CW', variable=direction, value='CW').pack(side=tk.LEFT, padx=5)
+tk.Radiobutton(direction_frame, text='CCW', variable=direction, value='CCW', command=on_direction_change).pack(side=tk.LEFT, padx=5)
+tk.Radiobutton(direction_frame, text='CW', variable=direction, value='CW', command=on_direction_change).pack(side=tk.LEFT, padx=5)
 
 # メインループ
 root.mainloop()
