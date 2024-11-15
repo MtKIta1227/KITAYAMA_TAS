@@ -26,47 +26,46 @@ class DataGraphApp(QMainWindow):
         self.addToolBar(self.toolbar)
 
         # ツールバーにボタンを追加
+        load_button = QPushButton("Load Data")
+        load_button.clicked.connect(self.load_data)
+        self.toolbar.addWidget(load_button)
 
-        load_all_button = QPushButton("Load")
+        load_all_button = QPushButton("Load All Data")
         load_all_button.clicked.connect(self.load_all_data)
         self.toolbar.addWidget(load_all_button)
 
-        plot_button = QPushButton("Plot ΔAbs")
+        plot_button = QPushButton("Plot")
         plot_button.clicked.connect(self.plot_graph)
         self.toolbar.addWidget(plot_button)
-
-        save_all_button = QPushButton("Save")
-        save_all_button.clicked.connect(self.save_all_data)
-        self.toolbar.addWidget(save_all_button)
-
-        overlay_selected_button = QPushButton("TAS")
-        overlay_selected_button.clicked.connect(self.overlay_selected_pulses)
-        self.toolbar.addWidget(overlay_selected_button)
 
         abs_plot_button = QPushButton("Plot ABS")  # 新しいボタン
         abs_plot_button.clicked.connect(self.plot_abs)  # 新しいメソッド
         self.toolbar.addWidget(abs_plot_button)
 
-        load_button = QPushButton("Load Data (Single)")
-        load_button.clicked.connect(self.load_data)
-        self.toolbar.addWidget(load_button)
-
-        save_button = QPushButton("Save Data (Single)")
+        save_button = QPushButton("Save")
         save_button.clicked.connect(self.save_data)
         self.toolbar.addWidget(save_button)
+
+        save_all_button = QPushButton("Save All Data")
+        save_all_button.clicked.connect(self.save_all_data)
+        self.toolbar.addWidget(save_all_button)
 
         save_excel_button = QPushButton("Output Excel")
         save_excel_button.clicked.connect(self.save_data_to_excel)
         self.toolbar.addWidget(save_excel_button)
 
+        overlay_selected_button = QPushButton("Overlay Selected Pulses")
+        overlay_selected_button.clicked.connect(self.overlay_selected_pulses)
+        self.toolbar.addWidget(overlay_selected_button)
+
         # パルス入力用のレイアウト
         pulse_layout = QHBoxLayout()
         self.pulse_input = QPlainTextEdit()
         self.pulse_input.setFixedSize(100, 30)
-        pulse_button = QPushButton("Save DataSet")
+        pulse_button = QPushButton("Save Pulse Data")
         pulse_button.clicked.connect(self.save_pulse_data)
 
-        pulse_layout.addWidget(QLabel("DataSet Name:"))
+        pulse_layout.addWidget(QLabel("Pulse:"))
         pulse_layout.addWidget(self.pulse_input)
         pulse_layout.addWidget(pulse_button)
         main_layout.addLayout(pulse_layout)
@@ -75,7 +74,7 @@ class DataGraphApp(QMainWindow):
         self.pulse_list = QListWidget()
         self.pulse_list.setSelectionMode(QListWidget.MultiSelection)
         self.pulse_list.itemClicked.connect(self.load_selected_pulse_data)  # 新しいシグナル接続
-        main_layout.addWidget(QLabel("Saved Data list:"))
+        main_layout.addWidget(QLabel("Saved Pulses:"))
         main_layout.addWidget(self.pulse_list)
 
         # 左側のレイアウト (ダークデータ)
@@ -168,6 +167,7 @@ class DataGraphApp(QMainWindow):
         return x_values, y_values
 
     def plot_graph(self):
+        
         # 各テキストボックスからデータを取得
         x_dark_ref, y_dark_ref = self.parse_data(self.text_boxes['DARK_ref'].toPlainText())
         _, y_dark_sig = self.parse_data(self.text_boxes['DARK_sig'].toPlainText())
@@ -225,12 +225,12 @@ class DataGraphApp(QMainWindow):
         plt.ylabel('ΔAbs')
         plt.legend()
         plt.grid()
+        plt.get_current_fig_manager().window.setGeometry(100, 100, 800, 400)
         plt.tight_layout()
-        plt.get_current_fig_manager().window.setGeometry(600, 100, 800, 400)
         plt.show()
 
         # ref と DARK_ref、sig と DARK_sig のグラフを同じウィンドウで表示
-        plt.figure(figsize=(6, 10))  # 高さを調整
+        combined_fig = plt.figure(figsize=(6, 10))  # 高さを調整
 
         # 上部 (ref と DARK_ref および ref_p と DARK_ref のグラフ)
         plt.subplot(3, 1, 1)  # 3行1列の配置の1つ目
@@ -260,7 +260,6 @@ class DataGraphApp(QMainWindow):
 
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Difference')
-        plt.ylim(0, 1)
         plt.legend()
         plt.grid()
 
@@ -324,7 +323,7 @@ class DataGraphApp(QMainWindow):
                         log_values.append(log_value)
                     else:
                         log_values.append(np.nan)
-                #プロットの色が追加が古い順に青から緑になっていくように設定
+                #プロットの色が追加が古いものが薄くなっていくように設定
                 alpha = 1 - list(self.pulse_data.keys()).index(pulse_value) / len(self.pulse_data.keys())*0.8
                 plt.plot(x_dark_ref_pulse, log_values, label=pulse_value, alpha=alpha, color='black', linestyle='-', linewidth=1)
 
@@ -414,18 +413,18 @@ class DataGraphApp(QMainWindow):
 
     def load_selected_pulse_data(self):
         selected_items = self.pulse_list.selectedItems()
-        if len(selected_items) == 1:  # 選択されたアイテムが1つだけの場合
-            pulse_value = selected_items[0].text()  # 最初の選択されたアイテムのテキストを取得
+        if selected_items:
+            # 最初の選択されたアイテムのみを処理
+            pulse_value = selected_items[0].text()
             if pulse_value in self.pulse_data:
                 data = self.pulse_data[pulse_value]
                 for label, content in data.items():
                     if label in self.text_boxes:
-                        self.text_boxes[label].setPlainText(content)  # テキストボックスにデータを設定
+                        self.text_boxes[label].setPlainText(content)
                 print(f"Pulse {pulse_value}のデータが読み込まれました。")
                 self.setWindowTitle(f"データグラフ作成 - {pulse_value}")
-        else:
-            # 複数のアイテムが選択されている場合は何もしない
-            print("複数のパルスが選択されています。")
+            else:
+                print(f"Pulse {pulse_value}のデータは見つかりません。")
 
     def update_pulse_list(self):
         self.pulse_list.clear()

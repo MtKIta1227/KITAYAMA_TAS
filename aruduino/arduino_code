@@ -1,25 +1,11 @@
-const int motorPin1 = 8;
-const int motorPin2 = 9;
-const int motorPin3 = 10;
-const int motorPin4 = 11;
-
-const int motorPin5 = 4; // 新しいモーターのピン
-const int motorPin6 = 5;
-const int motorPin7 = 6;
-const int motorPin8 = 7;
-
-int delayTime = 1; // デフォルトの遅延時間
+const int motorPins[] = {8, 9, 10, 11}; // モーターのピン配列
+int delayTime = 10; // 適切な遅延時間
 
 void setup() {
-  pinMode(motorPin1, OUTPUT);
-  pinMode(motorPin2, OUTPUT);
-  pinMode(motorPin3, OUTPUT);
-  pinMode(motorPin4, OUTPUT);
-  pinMode(motorPin5, OUTPUT); // 新しいモーターのピン設定
-  pinMode(motorPin6, OUTPUT);
-  pinMode(motorPin7, OUTPUT);
-  pinMode(motorPin8, OUTPUT);
-  Serial.begin(9600);
+  for (int i = 0; i < 4; i++) {
+    pinMode(motorPins[i], OUTPUT); // 各ピンを出力に設定
+  }
+  Serial.begin(9600); // シリアル通信を開始
 }
 
 void loop() {
@@ -30,9 +16,7 @@ void loop() {
 }
 
 void processCommand(String command) {
-  int steps = 0;
-  int direction = 1;
-  
+  int steps = 0, direction = 1;
   int firstComma = command.indexOf(',');
   int secondComma = command.indexOf(',', firstComma + 1);
 
@@ -40,85 +24,32 @@ void processCommand(String command) {
     steps = command.substring(0, firstComma).toInt();
     delayTime = command.substring(firstComma + 1, secondComma).toInt();
     direction = command.substring(secondComma + 1).toInt();
+    stepMotor(steps, delayTime, direction);
   }
-
-  stepMotor(steps, delayTime, direction);
 }
 
 void stepMotor(int steps, int delayTime, int direction) {
   for (int i = 0; i < steps; i++) {
     if (direction == 1) {
-      // 時計回りのステップシーケンス
-      digitalWrite(motorPin1, HIGH);
-      digitalWrite(motorPin2, LOW);
-      digitalWrite(motorPin3, LOW);
-      digitalWrite(motorPin4, LOW);
-      digitalWrite(motorPin5, LOW);
-      digitalWrite(motorPin6, LOW);
-      digitalWrite(motorPin7, LOW);
-      digitalWrite(motorPin8, LOW);
-      delay(delayTime);
-
-      digitalWrite(motorPin1, LOW);
-      digitalWrite(motorPin2, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin2, LOW);
-      digitalWrite(motorPin3, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin3, LOW);
-      digitalWrite(motorPin4, HIGH);
-      delay(delayTime);
-      
-      // 新しいモーターのステップ
-      digitalWrite(motorPin4, LOW);
-      digitalWrite(motorPin5, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin5, LOW);
-      digitalWrite(motorPin6, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin6, LOW);
-      digitalWrite(motorPin7, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin7, LOW);
-      digitalWrite(motorPin8, HIGH);
-      delay(delayTime);
+      stepClockwise(delayTime);
     } else {
-      // 反時計回りのステップシーケンス
-      digitalWrite(motorPin8, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin8, LOW);
-      digitalWrite(motorPin7, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin7, LOW);
-      digitalWrite(motorPin6, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin6, LOW);
-      digitalWrite(motorPin5, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin5, LOW);
-      digitalWrite(motorPin4, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin4, LOW);
-      digitalWrite(motorPin3, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin3, LOW);
-      digitalWrite(motorPin2, HIGH);
-      delay(delayTime);
-      
-      digitalWrite(motorPin2, LOW);
-      digitalWrite(motorPin1, HIGH);
-      delay(delayTime);
+      stepCounterClockwise(delayTime);
     }
+  }
+}
+
+void stepClockwise(int delayTime) {
+  for (int i = 0; i < 4; i++) {
+    digitalWrite(motorPins[i], HIGH);
+    delay(delayTime);
+    digitalWrite(motorPins[i], LOW);
+  }
+}
+
+void stepCounterClockwise(int delayTime) {
+  for (int i = 3; i >= 0; i--) {
+    digitalWrite(motorPins[i], HIGH);
+    delay(delayTime);
+    digitalWrite(motorPins[i], LOW);
   }
 }
