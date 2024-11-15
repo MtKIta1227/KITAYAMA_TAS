@@ -99,16 +99,21 @@ def stop_button_click(event):
     serial_write('STOP 0')
 
 # 駆動方向のボタン処理
-def drive_button_press(direction):
+def drive_button_press(new_direction):
     global direction
-    direction = direction
+    direction = new_direction
     move_stage()
 
 def ccw_button_press(event): drive_button_press('CCW')
 def cw_button_press(event): drive_button_press('CW')
 
-def ccw_button_release(event): if mode == 0: stop_button_click(event)
-def cw_button_release(event): if mode == 0: stop_button_click(event)
+def ccw_button_release(event):
+    if mode == 0:
+        stop_button_click(event)
+
+def cw_button_release(event):
+    if mode == 0:
+        stop_button_click(event)
 
 # ステージを駆動する
 def move_stage():
