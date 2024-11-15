@@ -16,7 +16,6 @@ class DataGraphApp(QMainWindow):
         global filter_width
         filter_width = 5
 
-
         self.setWindowTitle("TAS_Grapher_ver3.6")
         # ウィンドウサイズをコンパクトにした
         self.resize(400, 500)
@@ -372,7 +371,7 @@ class DataGraphApp(QMainWindow):
         plt.xlabel('Wavelength / nm')
         plt.ylabel('ΔAbs')
         plt.legend()
-        plt.title('Transient Absorption Spectrum Overlay')
+        plt.title('Transient Absorption Spectra')
         plt.tight_layout()
         plt.show()
 
