@@ -526,8 +526,7 @@ class DataGraphApp(QMainWindow):
             color_delta = (1 - list(self.pulse_data.keys()).index(pulse_name) / len(self.pulse_data.keys()) * 0.8, 0, 0)
             plt.plot(x_dark_ref, log_values, label=pulse_name, color=color_delta, alpha=0.7, linestyle='-', linewidth=1)
             plt.xlim(400,750)
-            plt.ylim(min(log_values)-0.1, max(log_values)+0.1 if log_values else 1)
-            #目盛りのフォントサイズを変更
+            plt.ylim(min(log_values)-0.1, max(log_values)+0.1 if len(log_values) > 0 else 1)            #目盛りのフォントサイズを変更
             plt.tick_params(labelsize=8)
             #横軸の目盛りの位置を縦軸の0に合わせる
             plt.gca().spines['bottom'].set_position(('data', 0))
