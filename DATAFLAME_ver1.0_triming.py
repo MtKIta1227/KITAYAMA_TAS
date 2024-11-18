@@ -165,9 +165,14 @@ class JsonToDataFrameApp(QMainWindow):
             for selected_wavelength in selected_wavelengths:
                 if selected_wavelength in self.df.index:
                     values = self.df.loc[selected_wavelength]
-                    plt.plot(self.df.columns, values, marker='o', label=f'Wavelength {selected_wavelength} nm')
+                    #色は単色で
+                    color = 'C0'
+                    #波長が数字であれば、小さいものから順に色を濃くしていく
+                    color = 'C' + str(sorted([int(c) for c in selected_wavelengths]).index(int(selected_wavelength)) % 10)
+
+                    plt.plot(self.df.columns, values, marker='o', label=f'Wavelength {selected_wavelength} nm', color=color)
             plt.title('ΔAbs at Selected Wavelengths')
-            plt.xlabel('Dataset')
+            plt.xlabel('Pulse Position')
             plt.ylabel('ΔAbs')
             plt.grid()
             plt.legend()
@@ -180,7 +185,9 @@ class JsonToDataFrameApp(QMainWindow):
             for selected_dataset in selected_datasets:
                 if selected_dataset in self.df.columns:
                     values = self.df[selected_dataset]
-                    plt.plot(self.df.index, values, marker='o', label=f'Dataset: {selected_dataset}')
+                    #色をデータセットの名前が数字であれば、小さいものから順に色を濃くしていく
+                    color = 'C' + str(sorted([int(c) for c in selected_datasets]).index(int(selected_dataset)) % 10)
+                    plt.plot(self.df.index, values, marker='o', label=f'Dataset: {selected_dataset}', color=color)
             plt.title('ΔAbs for Selected Datasets')
             plt.xlabel('Wavelength / nm')
             plt.ylabel('ΔAbs')
