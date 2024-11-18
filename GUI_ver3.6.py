@@ -16,7 +16,6 @@ class DataGraphApp(QMainWindow):
         global filter_width
         filter_width = 5
 
-
         self.setWindowTitle("TAS_Grapher_ver3.6")
         # ウィンドウサイズをコンパクトにした
         self.resize(400, 500)
@@ -366,13 +365,13 @@ class DataGraphApp(QMainWindow):
                 #移動平均の窓幅をfilter_widthに指定
                 log_values = np.convolve(log_values, np.ones(filter_width)/filter_width, mode='same')
                 #color_deltaの値は追加順に薄くしていく。色はRGBで指定
-                color_deltaabs = (0 , 0, 1-list(self.pulse_data.keys()).index(pulse_value) / len(self.pulse_data.keys()) * 0.9)
+                color_deltaabs = (1-list(self.pulse_data.keys()).index(pulse_value) / len(self.pulse_data.keys()) * 0.9,0,0)
                 plt.plot(x_dark_ref_pulse, log_values, label=pulse_value, color=color_deltaabs, linestyle='-', linewidth=1.5)
 
         plt.xlabel('Wavelength / nm')
         plt.ylabel('ΔAbs')
         plt.legend()
-        plt.title('Transient Absorption Spectrum Overlay')
+        plt.title('Transient Absorption Spectra')
         plt.tight_layout()
         plt.show()
 
@@ -503,7 +502,7 @@ class DataGraphApp(QMainWindow):
         
         # 保存されたすべてのパルスデータに対してΔAbsを計算
         #グラフサイズをウィジェットに合わせる
-        plt.figure(figsize=(6, 2))
+        plt.figure(figsize=(5, 2))
         for pulse_name, data in self.pulse_data.items():
             x_dark_ref, y_dark_ref = self.parse_data(data['DARK_ref'])
             _, y_dark_sig = self.parse_data(data['DARK_sig'])
@@ -527,8 +526,7 @@ class DataGraphApp(QMainWindow):
             color_delta = (1 - list(self.pulse_data.keys()).index(pulse_name) / len(self.pulse_data.keys()) * 0.8, 0, 0)
             plt.plot(x_dark_ref, log_values, label=pulse_name, color=color_delta, alpha=0.7, linestyle='-', linewidth=1)
             plt.xlim(400,750)
-            plt.ylim(min(log_values)-0.1, max(log_values)+0.1 if log_values else 1)
-            #目盛りのフォントサイズを変更
+            plt.ylim(min(log_values)-0.02, max(log_values)+0.02 if len(log_values) > 0 else 1)            #目盛りのフォントサイズを変更
             plt.tick_params(labelsize=8)
             #横軸の目盛りの位置を縦軸の0に合わせる
             plt.gca().spines['bottom'].set_position(('data', 0))
