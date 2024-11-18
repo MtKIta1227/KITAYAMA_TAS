@@ -150,7 +150,7 @@ class JsonToDataFrameApp(QMainWindow):
 
     def plot_delta_abs(self, df):
         plt.figure(figsize=(10, 6))
-        plt.imshow(df.T, aspect='auto', cmap='nipy_spectral', origin='lower', extent=[df.index.min(), df.index.max(), 0, df.shape[1]])
+        plt.imshow(df.T, aspect='auto', cmap='nipy_spectral', origin='lower', extent=[df.index.min(), df.index.max(), 0, df.shape[1]], interpolation='gaussian')
         plt.colorbar(label='ΔAbs')
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Pulse Position')
