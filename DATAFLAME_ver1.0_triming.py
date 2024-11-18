@@ -162,14 +162,16 @@ class JsonToDataFrameApp(QMainWindow):
         selected_wavelengths = [float(item.text()) for item in self.wavelength_list.selectedItems()]
         if selected_wavelengths and self.df is not None:
             plt.figure(figsize=(10, 6))
-            for selected_wavelength in selected_wavelengths:
+            # 選択された波長をソート
+            selected_wavelengths.sort()
+            # より濃い色合いのカラーマップを使用
+            cmap = plt.get_cmap("Blues") 
+            for i, selected_wavelength in enumerate(selected_wavelengths):
                 if selected_wavelength in self.df.index:
                     values = self.df.loc[selected_wavelength]
-                    #色は単色で
-                    color = 'C0'
-                    #波長が数字であれば、小さいものから順に色を濃くしていく
-                    color = 'C' + str(sorted([int(c) for c in selected_wavelengths]).index(int(selected_wavelength)) % 10)
-
+                    # 色の濃さを調整
+                    color = cmap((i + 0.6) / len(selected_wavelengths)) 
+                    selected_wavelength = f"{selected_wavelength:.1f}"#有効数字は小数点以下1桁
                     plt.plot(self.df.columns, values, marker='o', label=f'Wavelength {selected_wavelength} nm', color=color)
             plt.title('ΔAbs at Selected Wavelengths')
             plt.xlabel('Pulse Position')
@@ -182,12 +184,12 @@ class JsonToDataFrameApp(QMainWindow):
         selected_datasets = [item.text() for item in self.dataset_list.selectedItems()]
         if selected_datasets and self.df is not None:
             plt.figure(figsize=(10, 6))
-            for selected_dataset in selected_datasets:
+            cmap = plt.get_cmap("Purples")
+            for i, selected_dataset in enumerate(selected_datasets):
                 if selected_dataset in self.df.columns:
                     values = self.df[selected_dataset]
-                    #色をデータセットの名前が数字であれば、小さいものから順に色を濃くしていく
-                    color = 'C' + str(sorted([int(c) for c in selected_datasets]).index(int(selected_dataset)) % 10)
-                    plt.plot(self.df.index, values, marker='o', label=f'Dataset: {selected_dataset}', color=color)
+                    color = cmap((i + 0.8) / len(selected_datasets))
+                    plt.plot(self.df.index, values, marker='o', label=selected_dataset, color=color)
             plt.title('ΔAbs for Selected Datasets')
             plt.xlabel('Wavelength / nm')
             plt.ylabel('ΔAbs')
