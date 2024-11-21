@@ -62,6 +62,9 @@ class DeviceControlApp:
     def connect_button_click(self):
         global instrument
         try:
+            #現在接続されているGPIBデバイスのリストを取得
+            print(rm.list_resources())
+
             instrument = rm.open_resource("GPIB1::7::INSTR")
             instrument.timeout = 2000
             r_data = instrument.query("*IDN?")
