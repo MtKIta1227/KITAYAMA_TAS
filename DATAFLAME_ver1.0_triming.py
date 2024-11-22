@@ -184,7 +184,7 @@ class JsonToDataFrameApp(QMainWindow):
         selected_datasets = [item.text() for item in self.dataset_list.selectedItems()]
         if selected_datasets and self.df is not None:
             plt.figure(figsize=(10, 6))
-            cmap = plt.get_cmap("Purples")
+            cmap = plt.get_cmap("RdGy")
             for i, selected_dataset in enumerate(selected_datasets):
                 if selected_dataset in self.df.columns:
                     values = self.df[selected_dataset]
