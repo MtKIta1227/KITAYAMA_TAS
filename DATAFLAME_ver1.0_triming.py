@@ -155,7 +155,11 @@ class JsonToDataFrameApp(QMainWindow):
         plt.xlabel('Wavelength / nm')
         plt.ylabel('Pulse Position')
         plt.title('ΔAbs Heatmap')
-        plt.yticks(np.arange(df.shape[1]), df.columns)
+
+        # y軸の目盛りを調整
+        num_ticks = 25  # 目盛りの数
+        plt.yticks(np.linspace(0, df.shape[1] - 1, num_ticks).astype(int), df.columns[np.linspace(0, df.shape[1] - 1, num_ticks).astype(int)])
+
         plt.show()
 
     def update_plot_by_wavelength(self):
@@ -169,10 +173,14 @@ class JsonToDataFrameApp(QMainWindow):
             for i, selected_wavelength in enumerate(selected_wavelengths):
                 if selected_wavelength in self.df.index:
                     values = self.df.loc[selected_wavelength]
+<<<<<<< HEAD
+                    plt.plot(self.df.columns, values, label=f'Wavelength {selected_wavelength} nm', linestyle='-')
+=======
                     # 色の濃さを調整
                     color = cmap((i + 0.6) / len(selected_wavelengths)) 
                     selected_wavelength = f"{selected_wavelength:.1f}"#有効数字は小数点以下1桁
                     plt.plot(self.df.columns, values, marker='o', label=f'Wavelength {selected_wavelength} nm', color=color)
+>>>>>>> 60d4547b17fc7c39d8a77e2a1b20653372262dcd
             plt.title('ΔAbs at Selected Wavelengths')
             plt.xlabel('Pulse Position')
             plt.ylabel('ΔAbs')
