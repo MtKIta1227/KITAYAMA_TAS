@@ -1,4 +1,3 @@
-<<<<<<< HEAD:TAS/TA_Measure.py
 import os
 import time
 import logging
@@ -6,10 +5,6 @@ import pyvisa as visa
 import serial
 import serial.tools.list_ports
 import subprocess
-=======
-import os, time, logging
-import pyvisa as visa, serial, serial.tools.list_ports
->>>>>>> 9e878a564ecf05df71077d38b89a4b299e8774bb:02_TAS/TA_Measure.py
 import json
 
 # コンフィグ設定
@@ -24,15 +19,9 @@ def setup_config():
 
     # データの保存先フォルダの設定
     global output_folder_path
-<<<<<<< HEAD:TAS/TA_Measure.py
     script_dir = os.path.dirname(os.path.realpath(__file__)) # スクリプトのディレクトリを取得
     output_folder_path = os.path.join(script_dir, 'TA_DATA') # データの保存先フォルダをスクリプトのディレクトリに設定
     print('データの保存先フォルダ:', output_folder_path)
-=======
-    script_dir = os.path.dirname(os.path.realpath(__file__)) #スクリプトのディレクトリを取得
-    print('スクリプトのディレクトリ:', script_dir)
-    output_folder_path = os.path.join(script_dir, 'TA_DATA')#データの保存先フォルダをスクリプトのディレクトリに設定
->>>>>>> 9e878a564ecf05df71077d38b89a4b299e8774bb:02_TAS/TA_Measure.py
     if not os.path.exists(output_folder_path):
         os.makedirs(output_folder_path)
         logging.info('Create output folder: %s' % output_folder_path)
@@ -56,14 +45,7 @@ def get_connected_devices():
 # 遅延ステージの初期化
 def init_stage():
     global ser, sta, config, FSpeed
-<<<<<<< HEAD:TAS/TA_Measure.py
     print('\n>> 遅延ステージへの接続テストを行います')
-=======
-    #接続されている機器のリストを取得
-    get_connected_devices()
-
-    # 遅延ステージSURUGA D220に接続テスト、失敗したらエラーを出力し再接続を試みるかどうかを尋ねる
->>>>>>> 9e878a564ecf05df71077d38b89a4b299e8774bb:02_TAS/TA_Measure.py
     if 'GPIB1::7::INSTR' not in devices:
         print('SURUGA D220が接続されていません')
         logging.error('SURUGA D220 is not connected')
@@ -77,13 +59,8 @@ def init_stage():
                 else:
                     print('再接続に失敗しました。もう一度試してください。')
                     logging.error('Failed to reconnect SURUGA D220')
-<<<<<<< HEAD:TAS/TA_Measure.py
             elif user_input.lower() == 'p':
                 print('D220への接続テストをスキップします')
-=======
-            elif user_input.lower() == 'pass':
-                print('接続テストをスキップします')
->>>>>>> 9e878a564ecf05df71077d38b89a4b299e8774bb:02_TAS/TA_Measure.py
                 logging.info('Skipped connection test for SURUGA D220')
                 break
             else:
@@ -274,7 +251,6 @@ def init_shutter():
                 logging.error(f'接続中にエラーが発生しました: {e}')
 
 
-<<<<<<< HEAD:TAS/TA_Measure.py
 import os
 import json
 import logging
@@ -283,7 +259,8 @@ import logging
 def load_pulse_config_from_json():
     global pulse_config
     pulse_config = {}
-    json_file_path = os.path.join(os.path.dirname(__file__), 'ini', 'pulse_config.json')
+    # JSONファイルのパスはpythonファイルがある同じ階層にあるiniフォルダ内
+    json_file_path = os.path.join(os.path.dirname(__file__), 'ini_test', 'pulse_config.json')
 
     print('JSONファイルが存在するか確認します')
     
@@ -307,9 +284,10 @@ def load_pulse_config_from_json():
         set_pulse_config()
 
 def create_empty_pulse_config(json_file_path):
+    # 空のJSONファイルを作成
     with open(json_file_path, 'w') as f:
-        json.dump({}, f, indent=4)
-        logging.info('Created empty pulse_config.json')
+        json.dump(pulse_config, f, indent=4)
+        logging.info('Created pulse_config.json')
 
 def set_pulse_config():
     print('各ループごとのステップサイズを設定します。')
@@ -371,43 +349,6 @@ def save_pulse_config():
 # 関数のテスト
 if __name__ == "__main__":
     load_pulse_config_from_json()
-=======
-# JSONファイルの読み込み
-def load_json():
-    # JSONファイルの保存先を指定
-    json_save_dir = os.path.join(os.path.dirname(__file__), 'TA_JSON')
-    json_file_path = os.path.join(json_save_dir, 'TA_config.json')
-
-    if not os.path.exists(json_file_path):
-        print('JSONファイルが見つかりません')
-        logging.error('JSON file not found')
-        
-    else:
-        with open(json_file_path, 'r') as json_file:
-            data = json.load(json_file)
-            start_button_cordinates = tuple(data[start_button_cordinates])
-            print('start buttonの座標:', "start_button_cordinates")
-            logging.info('Start button coordinates: %s' % start_button_cordinates)
-            profile0_cordinates = tuple(data["profile0_cordinates"])
-            print('profile0の座標:', "profile0_cordinates")
-            logging.info('Profile0 coordinates: %s' % profile0_cordinates)
-            profile1_cordinates = tuple(data["profile1_cordinates"])
-            print('profile1の座標:', "profile1_cordinates")
-            logging.info('Profile1 coordinates: %s' % profile1_cordinates)
-
-            #残りの座標を決定
-            x, y = profile0_cordinates
-            profile0_cordinates2 = (x, y + 30)
-            profile0_cordinates3 = (x, y + 45)
-            x, y = profile1_cordinates
-            profile1_cordinates2 = (x, y + 30)
-            profile1_cordinates3 = (x, y + 45)
-        
-        return start_button_cordinates, profile0_cordinates, profile0_cordinates2, profile0_cordinates3, profile1_cordinates, profile1_cordinates2, profile1_cordinates3
-
-               
-
->>>>>>> 9e878a564ecf05df71077d38b89a4b299e8774bb:02_TAS/TA_Measure.py
 
 def main():
     print("╔════════════════════════════════════════════╗")
@@ -417,7 +358,6 @@ def main():
     # コンフィグ設定
     setup_config()
 
-<<<<<<< HEAD:TAS/TA_Measure.py
     # 装置の初期化
     print('\n>> 各装置への接続テストを行います')
     get_connected_devices() # 接続されている機器のリストを取得
@@ -431,14 +371,6 @@ def main():
     # JSONファイルの読み込み（保存しておいた初期値の読み込み）
     print('\n>> JSONファイルから座標を読み込みます')
     load_coordinates_config_from_json()
-=======
-    #装置の初期化
-    print('装置の初期化を行います')
-    init_stage() #遅延ステージの初期化
-    init_shutter() #シャッターの初期化
-
-    #WindowSpyの起動
->>>>>>> 9e878a564ecf05df71077d38b89a4b299e8774bb:02_TAS/TA_Measure.py
 
     # 座標の設定
     set_coordinates()
