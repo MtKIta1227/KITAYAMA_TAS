@@ -77,7 +77,7 @@ def shutter_switch_motor1():
         shutter_state_motor1.set("CLOSE")
         shutter_state_label_motor1.config(fg="blue", font=("", 12, "bold"))
     
-    shutter_state_label_motor1.config(text=f"Shutter Motor 1 : {shutter_state_motor1.get()}")
+    shutter_state_label_motor1.config(text=f"Shutter White light : {shutter_state_motor1.get()}")
 
 # シャッタースイッチの設定 (モーター2)
 def shutter_switch_motor2():
@@ -103,7 +103,7 @@ def shutter_switch_motor2():
         shutter_state_motor2.set("CLOSE")
         shutter_state_label_motor2.config(fg="blue", font=("", 12, "bold"))
     
-    shutter_state_label_motor2.config(text=f"Shutter Motor 2 : {shutter_state_motor2.get()}")
+    shutter_state_label_motor2.config(text=f"Shutter Pump : {shutter_state_motor2.get()}")
 
 # GUIの設定
 root = tk.Tk()
@@ -115,23 +115,23 @@ selected_port = ports[0] if ports else None
 
 # シリアルポートの選択
 port_var = StringVar(value=selected_port)
-port_label = tk.Label(root, text="シリアルポート:")
+port_label = tk.Label(root, text="Serial Port:")
 port_label.grid(row=0, column=0)
 
 port_dropdown = ttk.Combobox(root, textvariable=port_var, values=ports)
 port_dropdown.grid(row=0, column=1)
 
-connect_button = tk.Button(root, text="接続", command=connect_to_selected_port)
+connect_button = tk.Button(root, text="Connect", command=connect_to_selected_port)
 connect_button.grid(row=0, column=2)
 
 # モーターの選択
 motor_var = StringVar(value="1")  # 初期値をモーター1に設定
-tk.Label(root, text="モーター番号:").grid(row=1, column=0)
-tk.Radiobutton(root, text="Motor 1", variable=motor_var, value="1").grid(row=1, column=1)
-tk.Radiobutton(root, text="Motor 2", variable=motor_var, value="2").grid(row=1, column=2)
+tk.Label(root, text="control:").grid(row=1, column=0)
+tk.Radiobutton(root, text="White light", variable=motor_var, value="1").grid(row=1, column=1)
+tk.Radiobutton(root, text="Pump", variable=motor_var, value="2").grid(row=1, column=2)
 
 # モーターの入力フィールド
-tk.Label(root, text="角度:").grid(row=2, column=0)
+tk.Label(root, text="Angle:").grid(row=2, column=0)
 steps_entry = tk.Entry(root)  # 角度入力用エントリ
 steps_entry.grid(row=2, column=1)
 
@@ -139,7 +139,7 @@ direction_var = StringVar(value="1")  # 初期値をCWに設定
 direction_var_motor1 = StringVar(value="-1")
 direction_var_motor2 = StringVar(value="1")
 
-tk.Label(root, text="方向:").grid(row=3, column=0)
+tk.Label(root, text="Direction:").grid(row=3, column=0)
 tk.Radiobutton(root, text="CW", variable=direction_var, value="1").grid(row=3, column=1)
 tk.Radiobutton(root, text="CCW", variable=direction_var, value="-1").grid(row=3, column=2)
 
@@ -147,21 +147,21 @@ run_button = tk.Button(root, text="Run", command=on_run_motor)
 run_button.grid(row=2, column=2)
 
 # シャッタースイッチボタン (モーター1)
-shutter_button_motor1 = tk.Button(root, text="Shutter Switch Motor 1", command=shutter_switch_motor1)
+shutter_button_motor1 = tk.Button(root, text="Switch WHITE", command=shutter_switch_motor1)
 shutter_button_motor1.grid(row=4, column=0)
 
 # シャッター状態表示ラベル (モーター1)
 shutter_state_motor1 = StringVar(value="CLOSE")
-shutter_state_label_motor1 = tk.Label(root, text=f"Shutter Motor 1 : {shutter_state_motor1.get()}")
+shutter_state_label_motor1 = tk.Label(root, text=f"Shutter : {shutter_state_motor1.get()}")
 shutter_state_label_motor1.grid(row=5, column=0)
 
 # シャッタースイッチボタン (モーター2)
-shutter_button_motor2 = tk.Button(root, text="Shutter Switch Motor 2", command=shutter_switch_motor2)
+shutter_button_motor2 = tk.Button(root, text="Switch PUMP", command=shutter_switch_motor2)
 shutter_button_motor2.grid(row=4, column=1)
 
 # シャッター状態表示ラベル (モーター2)
 shutter_state_motor2 = StringVar(value="CLOSE")
-shutter_state_label_motor2 = tk.Label(root, text=f"Shutter Motor 2 : {shutter_state_motor2.get()}")
+shutter_state_label_motor2 = tk.Label(root, text=f"Shutter : {shutter_state_motor2.get()}")
 shutter_state_label_motor2.grid(row=5, column=1)
 
 # GUIのメインループを開始
