@@ -1,0 +1,4 @@
+HPDTA上のacquisitionボタンを押す
+測定時間分待機
+各テキストボックスをreferenceとsignalに分配（必要ない）手でやる方が融通がきく
+
