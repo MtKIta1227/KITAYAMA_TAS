@@ -423,9 +423,10 @@ class DataGraphApp(QMainWindow):
     def save_data_to_excel(self):
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getSaveFileName(self, "エクセルファイルを保存", "", "Excel Files (*.xlsx);;All Files (*)", options=options)
-        
+        #エクセルファイルを保存する
         if file_path:
             with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+                matome_data = {'Wavelength': None}  # Matomeシート用のデータを収集する辞書
                 for pulse, data in self.pulse_data.items():
                     x_dark_ref, y_dark_ref = self.parse_data(data['DARK_ref'])
                     _, y_dark_sig = self.parse_data(data['DARK_sig'])
@@ -433,7 +434,7 @@ class DataGraphApp(QMainWindow):
                     _, y_sig = self.parse_data(data['sig'])
                     _, y_ref_p = self.parse_data(data['ref_p'])
                     _, y_sig_p = self.parse_data(data['sig_p'])
-
+                    #データフレームを作成
                     df = pd.DataFrame({
                         'Wavelength': x_dark_ref,
                         'DARK_ref': y_dark_ref,
@@ -443,7 +444,7 @@ class DataGraphApp(QMainWindow):
                         'ref_p': y_ref_p,
                         'sig_p': y_sig_p
                     })
-
+                    #ΔAbsを計算
                     log_values = []
                     for ref_p_real, sig_real, sig_p_real, ref_real in zip(y_ref_p, y_sig, y_sig_p, y_ref):
                         if ref_real != 0 and sig_p_real != 0:
@@ -451,12 +452,22 @@ class DataGraphApp(QMainWindow):
                             log_values.append(log_value)
                         else:
                             log_values.append(np.nan)
-                    df['ΔAbs'] = log_values
+                    df['ΔAbs'] = log_values  # ΔAbsをデータフレームに追加
+    
+                    # Matomeシート用のデータを収集
+                    if matome_data['Wavelength'] is None:
+                        matome_data['Wavelength'] = x_dark_ref
+                    matome_data[pulse] = log_values
+    
+                    #データフレームをエクセルファイルに保存
                     df.to_excel(writer, sheet_name=pulse, index=False)
-            
-            print("データがエクセルファイルに保存されました:", file_path)
-            #self.display_message(f"データがエクセルファイルに保存されました: {file_path}")
-
+    
+                # Matomeシートにデータをまとめて保存
+                if matome_data:
+                    matome_df = pd.DataFrame(matome_data)
+                    matome_df.to_excel(writer, sheet_name='Matome', index=False)
+                    
+                                #with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
     def load_selected_pulse_data(self):
         selected_items = self.pulse_list.selectedItems()
         if len(selected_items) == 1:  # 選択されたアイテムが1つだけの場合
