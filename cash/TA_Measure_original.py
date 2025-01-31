@@ -374,12 +374,12 @@ def main():
     setup_logging()
 
     # 装置の初期化
-    instrument_initialized()
-    input("装置の設定がよければ'Enter'を押してください。")
+    #instrument_initialized()
+    #input("装置の設定がよければ'Enter'を押してください。")
 
     # WindowSpyの起動
-    file_path = r'C:\Users\USER\Desktop\Laser_Program\03_TA\Measurement\operation_test\WindowSpy.ahk'
-    subprocess.Popen(file_path, shell=True)
+    #file_path = r'C:\Users\USER\Desktop\Laser_Program\03_TA\Measurement\operation_test\WindowSpy.ahk'
+    #subprocess.Popen(file_path, shell=True)
 
     # jsonファイルの読み込み
     load_config_from_json()
