@@ -453,20 +453,20 @@ class DataGraphApp(QMainWindow):
                         else:
                             log_values.append(np.nan)
                     df['ΔAbs'] = log_values  # ΔAbsをデータフレームに追加
-    
+
                     # Matomeシート用のデータを収集
                     if matome_data['Wavelength'] is None:
                         matome_data['Wavelength'] = x_dark_ref
                     matome_data[pulse] = log_values
-    
+
                     #データフレームをエクセルファイルに保存
                     df.to_excel(writer, sheet_name=pulse, index=False)
-    
+
                 # Matomeシートにデータをまとめて保存
                 if matome_data:
                     matome_df = pd.DataFrame(matome_data)
-                    matome_df.to_excel(writer, sheet_name='Matome', index=False)
-                    
+                    matome_df.to_excel(writer, sheet_name='ΔAbs summary', index=False)
+
                                 #with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
     def load_selected_pulse_data(self):
         selected_items = self.pulse_list.selectedItems()
