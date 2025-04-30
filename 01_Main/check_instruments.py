@@ -11,7 +11,7 @@ def main():
     for p in ports:
         print(p.device)
 
-    # 接続されているポートが1つもない場合
+    # 接続されているポートが1つもない場合COM1
     if len(ports) == 0:
         print("No ports found")
         sys.exit()
