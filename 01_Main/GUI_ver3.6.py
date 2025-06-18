@@ -7,6 +7,7 @@ from PyQt5.QtGui import QPixmap
 import json
 import os
 import pandas as pd
+import re
 
 class DataGraphApp(QMainWindow):
     def __init__(self):
@@ -212,14 +213,23 @@ class DataGraphApp(QMainWindow):
     def parse_data(self, data):
         x_values, y_values = [], []
         for line in data.splitlines():
-            if line.strip():
-                parts = line.split()
+            line = line.strip()
+            if not line:
+                continue
+
+            # 数値らしきものをすべて抽出する
+            nums = re.findall(r"[-+]?\d*\.\d+|[-+]?\d+", line)
+            if len(nums) >= 2:
                 try:
-                    x_values.append(float(parts[0]))
-                    y_values.append(float(parts[1]))
-                except (ValueError, IndexError) as e:
-                    QMessageBox.warning(self, "データエラー", f"データの解析中にエラーが発生しました: {e}")
-                    #self.display_message(f"データの解析中にエラーが発生しました: {e}")
+                    x_values.append(float(nums[0]))
+                    y_values.append(float(nums[1]))
+                except ValueError:
+                    # 変換できない場合は無視する
+                    pass
+            else:
+                # 数値が2つ未満の場合は無視
+                continue
+
         return x_values, y_values
 
     def plot_graph(self):
