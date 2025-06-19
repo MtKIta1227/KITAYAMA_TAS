@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""同期誤差測定（開始・終了）
+"""同期誤差測定 ― シンプル表示版
 
-2 台の Ocean Insight 分光器を *ほぼ同時* に駆動し、
+● なにをする？
+    2 台の Ocean Insight 分光器で *ほぼ同時* に 100 回スペクトルを取得し、
+    積算開始時刻差 |Δ| (ms) を測って "どの程度ずれているか" を一目で示します。
 
-- コマンド発行時刻差        (command-Δ)
-- 積算終了時刻差            (finish-Δ)
-- 積算開始時刻差            (start-Δ = finish-Δ)
+● 出力は 3 つだけ
+    1. 進捗バー (#####...)
+    2. 統計まとめ (平均・中央値・95%タイル・最大)
+    3. 絶対誤差のヒストグラム (自動表示)
 
-を 100 回測定してグラフ化します。
-
-> **注意**  
-> 積算時間が両機同じなら **開始差 = 終了差** なので、
-> `start-Δ` は `finish-Δ` をそのまま採用します。
-> 以前バージョンで積算時間を差し引いていたのは誤りでした。
+※ 積算時間: 4 ms  (両機共通)
+※ 開始時刻差 = 終了時刻差 なので終了時刻を利用
 """
 
 import sys
 import time
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -26,91 +24,88 @@ import matplotlib.pyplot as plt
 import seabreeze
 from seabreeze.spectrometers import list_devices, Spectrometer
 
-# --- 設定 ---
-BACKENDS = ["cseabreeze", "pyseabreeze"]  # 使用候補バックエンド
-NEEDED    = 2                               # 必要台数
-INT_MS    = 100                               # 積算時間 [ms]
-ITER      = 100                             # 測定回数
+# ------------------ 設定 ------------------
+BACKENDS = ["cseabreeze", "pyseabreeze"]
+NEEDED   = 2      # 必要台数
+INT_MS   = 100    # 積算時間 [ms]
+ITER     = 20    # 測定回数
 
-# --- Util ---
+
+# -------------- バックエンド選択 --------------
 
 def pick_backend(required=NEEDED):
-    """利用可能なバックエンドを探す"""
     best, best_be = [], None
+
+
     for be in BACKENDS:
         try:
             seabreeze.use(be)
-        except Exception as e:
-            print(f"[WARN] {be} load fail: {e}")
+        except Exception:
             continue
         devs = list_devices()
-        print(f"[{be}] detect {len(devs)}")
         if len(devs) >= required:
             return be, devs
         if len(devs) > len(best):
             best, best_be = devs, be
     return best_be, best
 
+# ---------------- 測定関数 ----------------
 
 def acquire(spec: Spectrometer):
-    """コマンド発行直前・戻り直後の時刻を返す"""
     t_cmd = time.perf_counter()
     _ = spec.spectrum()
     t_fin = time.perf_counter()
-    return spec.serial_number, t_cmd, t_fin
+    return t_cmd, t_fin
 
-# --- main ---
+# ----------------- メイン -----------------
 
 def main():
-    be, devs = pick_backend(NEEDED)
+    be, devs = pick_backend()
     if not be or len(devs) < NEEDED:
-        print("[ERROR] 2 台検出できません")
+        print("[ERROR] 分光器を 2 台検出できません")
         sys.exit(1)
 
-    print(f"\n[INFO] backend = {be}")
-    for i, d in enumerate(devs):
-        print(f"  dev[{i}] serial={d.serial_number}")
-
-    # 分光器オープン & 積算時間設定
     specs = [Spectrometer(devs[i]) for i in range(NEEDED)]
     for s in specs:
         s.integration_time_micros(INT_MS * 1000)
+        s.spectrum()  # ウォームアップ
 
-    # ウォームアップ 1 枚
-    for s in specs:
-        s.spectrum()
+    abs_errors = []
+    bar_unit = ITER // 50 or 1  # 進捗バー更新間隔
+    print("計測中:", end=" ")
 
-    cmd_diffs, fin_diffs, start_diffs = [], [], []
     with ThreadPoolExecutor(max_workers=NEEDED) as ex:
         for n in range(1, ITER + 1):
-            res = list(ex.map(acquire, specs))
-            res.sort(key=lambda x: x[0])  # serial 順
-            _, c0, f0 = res[0]
-            _, c1, f1 = res[1]
-            cmd = abs(c1 - c0) * 1000
-            fin = abs(f1 - f0) * 1000
-            start = fin  # 同積算時間なら開始差＝終了差
-            cmd_diffs.append(cmd)
-            fin_diffs.append(fin)
-            start_diffs.append(start)
-            print(f"#{n:3d} cmd-Δ={cmd:.3f}  fin-Δ={fin:.3f}  start-Δ={start:.3f} ms")
+            times = list(ex.map(acquire, specs))
+            # シリアル順で固定 (list_devices 順序)
+            c0, f0 = times[0]
+            c1, f1 = times[1]
+            delta_ms = abs(f1 - f0) * 1000  # 絶対誤差(ms)
+            abs_errors.append(delta_ms)
+            if n % bar_unit == 0 or n == ITER:
+                print("#", end="", flush=True)
+    print(" 完了")
 
-    # 統計
-    cmd_mean, fin_mean, start_mean = map(np.mean, (cmd_diffs, fin_diffs, start_diffs))
+    # ---------- 統計 ----------
+    a = np.array(abs_errors)
+    mean = a.mean()
+    median = np.median(a)
+    p95 = np.percentile(a, 95)
+    max_v = a.max()
 
-    print("\n[SUMMARY]")
-    print(f"平均 cmd-Δ   : {cmd_mean:.3f} ms")
-    print(f"平均 finish-Δ: {fin_mean:.3f} ms")
-    print(f"平均 start-Δ : {start_mean:.3f} ms")
+    print("\n=== 誤差統計 (ms) ===")
+    print(f"平均   : {mean:.3f}")
+    print(f"中央値 : {median:.3f}")
+    print(f"95%タイル: {p95:.3f}")
+    print(f"最大   : {max_v:.3f}")
 
-    # --- plot ---
-    x = np.arange(1, ITER + 1)
-    plt.figure(figsize=(10, 4))
-    plt.plot(x, start_diffs, label="start-Δ", marker="o", ms=3)
-    plt.hlines(start_mean, 1, ITER, linestyles="--", label=f"mean {start_mean:.2f} ms")
-    plt.title(f"Start-Δ | N={ITER}, int={INT_MS} ms")
-    plt.xlabel("Shot #")
-    plt.ylabel("Error (ms)")
+    # ---------- ヒストグラム ----------
+    plt.figure(figsize=(8, 4))
+    plt.hist(a, bins='auto')
+    plt.axvline(mean, linestyle="--", label=f"平均 {mean:.2f} ms")
+    plt.xlabel("|Δ| (ms)")
+    plt.ylabel("Count")
+    plt.title(f"Start 時刻差の分布  N={ITER}, int={INT_MS} ms")
     plt.legend()
     plt.tight_layout()
     plt.show()
